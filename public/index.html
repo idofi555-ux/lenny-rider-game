@@ -1,1987 +1,326 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-  <title>Lenny's Rider - Free Stunt Racing Game</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>Lenny's Rider</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --neon-pink: #ff00ff;
-      --neon-blue: #00ffff;
-      --neon-green: #00ff00;
-      --neon-yellow: #ffff00;
-      --neon-orange: #ff6600;
-      --dark-bg: #0a0a1a;
-      --darker-bg: #050510;
-    }
-
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Rajdhani', sans-serif;
-      background: var(--dark-bg);
-      color: white;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
-
-    /* MENU SCREEN */
-    #menu-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(180deg, #0a0a2e 0%, #1a0a2e 50%, #0a1a2e 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-
-    #menu-screen.hidden {
-      display: none;
-    }
-
-    .menu-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2rem, 8vw, 4rem);
-      font-weight: 900;
-      text-transform: uppercase;
-      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 40px rgba(255, 0, 255, 0.5);
-      animation: titleGlow 2s ease-in-out infinite alternate;
-      margin-bottom: 10px;
-    }
-
-    .menu-subtitle {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(0.8rem, 3vw, 1.2rem);
-      color: var(--neon-yellow);
-      text-shadow: 0 0 20px var(--neon-yellow);
-      margin-bottom: 40px;
-      letter-spacing: 4px;
-    }
-
-    @keyframes titleGlow {
-      from { filter: brightness(1) drop-shadow(0 0 20px var(--neon-pink)); }
-      to { filter: brightness(1.3) drop-shadow(0 0 40px var(--neon-blue)); }
-    }
-
-    .menu-car {
-      width: 150px;
-      height: 60px;
-      margin-bottom: 40px;
-      animation: carBounce 1s ease-in-out infinite;
-    }
-
-    @keyframes carBounce {
-      0%, 100% { transform: translateY(0) rotate(-5deg); }
-      50% { transform: translateY(-20px) rotate(5deg); }
-    }
-
-    .menu-stats {
-      display: flex;
-      gap: 30px;
-      margin-bottom: 30px;
-    }
-
-    .stat-box {
-      background: rgba(0, 255, 255, 0.1);
-      border: 2px solid var(--neon-blue);
-      border-radius: 10px;
-      padding: 15px 25px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
-    }
-
-    .stat-label {
-      font-size: 0.7rem;
-      color: var(--neon-blue);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    .stat-value {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: white;
-      text-shadow: 0 0 10px var(--neon-blue);
-    }
-
-    .menu-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .menu-btn {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.2rem;
-      font-weight: 700;
-      padding: 18px 60px;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-    }
-
-    .menu-btn:active {
-      opacity: 0.8;
-      transform: scale(0.98);
-    }
-
-    .menu-btn.play {
-      background: linear-gradient(90deg, #00ff00, #00cc00);
-      color: #003300;
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 5px 0 #006600;
-    }
-
-    .menu-btn.play:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 0 50px rgba(0, 255, 0, 0.8), 0 8px 0 #006600;
-    }
-
-    .menu-btn.play:active {
-      transform: translateY(2px);
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 2px 0 #006600;
-    }
-
-    .menu-btn.garage {
-      background: linear-gradient(90deg, var(--neon-blue), #0088ff);
-      color: #001133;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 4px 0 #004466;
-    }
-
-    .menu-btn.garage:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), 0 6px 0 #004466;
-    }
-
-    .free-badge {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: var(--neon-yellow);
-      color: #333;
-      font-size: 0.6rem;
-      padding: 4px 8px;
-      border-radius: 10px;
-      font-weight: 700;
-      animation: badgePulse 1s ease-in-out infinite;
-    }
-
-    @keyframes badgePulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-
-    /* SOUND CONTROLS */
-    .sound-controls {
-      display: flex;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .sound-btn {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      border: 2px solid var(--neon-blue);
-      background: rgba(0, 255, 255, 0.1);
-      font-size: 1.5rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .sound-btn:hover {
-      background: rgba(0, 255, 255, 0.3);
-      transform: scale(1.1);
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-    }
-
-    /* GARAGE SCREEN */
-    #garage-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(180deg, #1a0a2e 0%, #0a0a1a 100%);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      z-index: 100;
-      overflow-y: auto;
-    }
-
-    #garage-screen.active {
-      display: flex;
-    }
-
-    .garage-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 2rem;
-      color: var(--neon-blue);
-      text-shadow: 0 0 20px var(--neon-blue);
-      margin-bottom: 20px;
-    }
-
-    .cars-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 15px;
-      width: 100%;
-      max-width: 600px;
-      margin-bottom: 20px;
-    }
-
-    .car-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      border-radius: 15px;
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .car-card:hover {
-      border-color: var(--neon-pink);
-      box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
-      transform: translateY(-5px);
-    }
-
-    .car-card.selected {
-      border-color: var(--neon-green);
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
-      background: rgba(0, 255, 0, 0.1);
-    }
-
-    .car-preview {
-      width: 80px;
-      height: 40px;
-      margin: 0 auto 10px;
-    }
-
-    .car-name {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.8rem;
-      color: white;
-      margin-bottom: 5px;
-    }
-
-    .car-free {
-      font-size: 0.7rem;
-      color: var(--neon-green);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .back-btn {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1rem;
-      padding: 12px 40px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid var(--neon-pink);
-      border-radius: 25px;
-      color: var(--neon-pink);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .back-btn:hover {
-      background: var(--neon-pink);
-      color: white;
-      box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
-    }
-
-    /* GAME SCREEN */
-    #game-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-    }
-
-    #game-container.active {
-      display: block;
-    }
-
-    #game-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      touch-action: none;
-    }
-
-    #touch-area {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      touch-action: none;
-    }
-
-    /* HUD */
-    #hud {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      padding: 15px 20px;
-      display: none;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
-      z-index: 50;
-    }
-
-    #hud.active {
-      display: flex;
-    }
-
-    .hud-left, .hud-right {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .hud-box {
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid;
-      border-radius: 10px;
-      padding: 8px 15px;
-      backdrop-filter: blur(5px);
-    }
-
-    .hud-box.score {
-      border-color: var(--neon-pink);
-    }
-
-    .hud-box.coins {
-      border-color: var(--neon-yellow);
-    }
-
-    .hud-box.challenge {
-      border-color: var(--neon-blue);
-      max-width: 200px;
-    }
-
-    .hud-label {
-      font-size: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      opacity: 0.7;
-    }
-
-    .hud-value {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-
-    .hud-box.score .hud-value {
-      color: var(--neon-pink);
-      text-shadow: 0 0 10px var(--neon-pink);
-    }
-
-    .hud-box.coins .hud-value {
-      color: var(--neon-yellow);
-      text-shadow: 0 0 10px var(--neon-yellow);
-    }
-
-    .hud-box.challenge .hud-value {
-      font-size: 0.9rem;
-      color: var(--neon-blue);
-    }
-
-    .hud-progress {
-      width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-      margin-top: 5px;
+      background: #1a0a2e;
+      font-family: Arial, sans-serif;
       overflow: hidden;
+      height: 100vh;
+      width: 100vw;
     }
 
-    .hud-progress-fill {
-      height: 100%;
-      background: var(--neon-green);
-      border-radius: 2px;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 10px var(--neon-green);
-    }
-
-    /* Pause Button */
-    #pause-btn {
-      position: fixed;
-      top: 15px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid var(--neon-blue);
-      border-radius: 10px;
-      display: none;
+    #menu {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      background: linear-gradient(180deg, #0a0a2e, #1a0a2e);
+    }
+
+    #menu.hidden { display: none; }
+
+    h1 {
+      color: #00ffff;
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #00ffff;
+    }
+
+    .btn {
+      background: #00ff00;
+      color: #003300;
+      border: none;
+      padding: 25px 80px;
+      font-size: 28px;
+      font-weight: bold;
+      border-radius: 50px;
+      margin: 15px;
       cursor: pointer;
-      z-index: 60;
-      pointer-events: auto;
+      -webkit-appearance: none;
     }
 
-    #pause-btn.active {
-      display: flex;
+    .btn:active {
+      background: #00cc00;
+      transform: scale(0.95);
     }
 
-    #pause-btn span {
-      width: 4px;
-      height: 15px;
-      background: var(--neon-blue);
-      margin: 0 2px;
-      border-radius: 2px;
+    #game {
+      display: none;
+      width: 100%;
+      height: 100%;
     }
 
-    /* JUMP BUTTON */
-    #jump-btn {
+    #game.active { display: block; }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #jump {
       position: fixed;
       bottom: 30px;
       right: 30px;
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--neon-green), #00aa00);
-      border: 4px solid #00ff00;
+      background: #00ff00;
       color: #003300;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.2rem;
-      font-weight: 900;
+      border: 4px solid #00cc00;
+      font-size: 20px;
+      font-weight: bold;
+      display: none;
       cursor: pointer;
-      z-index: 100;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 5px 0 #006600;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+      -webkit-appearance: none;
     }
 
-    #jump-btn.active {
-      display: flex;
-    }
+    #jump.active { display: block; }
 
-    #jump-btn:active {
-      transform: translateY(3px);
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 2px 0 #006600;
-    }
-
-    /* FLIP INDICATOR */
-    #flip-indicator {
+    #score {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--neon-green);
-      text-shadow: 0 0 30px var(--neon-green), 0 0 60px var(--neon-green);
-      opacity: 0;
-      pointer-events: none;
-      z-index: 70;
-      transition: opacity 0.2s ease;
-    }
-
-    #flip-indicator.show {
-      opacity: 1;
-      animation: flipPop 0.5s ease-out;
-    }
-
-    @keyframes flipPop {
-      0% { transform: translate(-50%, -50%) scale(0.5); }
-      50% { transform: translate(-50%, -50%) scale(1.3); }
-      100% { transform: translate(-50%, -50%) scale(1); }
-    }
-
-    /* GAME OVER SCREEN */
-    #gameover-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-
-    #gameover-screen.active {
-      display: flex;
-    }
-
-    .gameover-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 2.5rem;
-      color: var(--neon-pink);
-      text-shadow: 0 0 30px var(--neon-pink);
-      margin-bottom: 30px;
-    }
-
-    .gameover-stats {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    .gameover-stat {
-      text-align: center;
-      padding: 15px 25px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .gameover-stat-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      opacity: 0.7;
-      margin-bottom: 5px;
-    }
-
-    .gameover-stat-value {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--neon-blue);
-      text-shadow: 0 0 10px var(--neon-blue);
-    }
-
-    .challenge-result {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.2rem;
-      margin-bottom: 30px;
-      padding: 15px 30px;
-      border-radius: 10px;
-    }
-
-    .challenge-result.complete {
-      color: var(--neon-green);
-      background: rgba(0, 255, 0, 0.1);
-      border: 2px solid var(--neon-green);
-      text-shadow: 0 0 10px var(--neon-green);
-    }
-
-    .challenge-result.incomplete {
-      color: var(--neon-orange);
-      background: rgba(255, 102, 0, 0.1);
-      border: 2px solid var(--neon-orange);
-    }
-
-    .gameover-buttons {
-      display: flex;
-      gap: 15px;
-    }
-
-    .gameover-btn {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1rem;
-      padding: 15px 40px;
-      border: none;
-      border-radius: 30px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      transition: all 0.3s ease;
-    }
-
-    .gameover-btn.retry {
-      background: linear-gradient(90deg, var(--neon-green), #00cc00);
-      color: #003300;
-    }
-
-    .gameover-btn.menu {
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid var(--neon-blue);
-      color: var(--neon-blue);
-    }
-
-    .gameover-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Touch Instructions */
-    .touch-hint {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.5);
-      text-align: center;
-      pointer-events: none;
-      z-index: 40;
+      top: 20px;
+      left: 20px;
+      color: #00ffff;
+      font-size: 24px;
+      font-weight: bold;
       display: none;
     }
 
-    #game-container.active .touch-hint {
-      display: block;
-      animation: fadeOut 3s ease-out forwards;
-    }
-
-    @keyframes fadeOut {
-      0%, 70% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .menu-stats {
-        flex-direction: column;
-        gap: 15px;
-      }
-      
-      .gameover-stats {
-        flex-direction: column;
-      }
-      
-      .gameover-buttons {
-        flex-direction: column;
-      }
-    }
+    #score.active { display: block; }
   </style>
 </head>
 <body>
-  <!-- MENU SCREEN -->
-  <div id="menu-screen">
-    <h1 class="menu-title">Lenny's Rider</h1>
-    <p class="menu-subtitle">★ Free Stunt Racing ★</p>
-    
-    <svg class="menu-car" viewBox="0 0 100 45">
-      <!-- Car body -->
-      <path d="M15 30 L20 15 L35 10 L65 10 L80 15 L85 30 L15 30 Z" fill="#00ffff" stroke="#ffffff" stroke-width="2"/>
-      <!-- Windows -->
-      <path d="M25 15 L30 12 L45 12 L48 15 Z" fill="#0066aa" stroke="#00ffff" stroke-width="1"/>
-      <path d="M52 15 L55 12 L70 12 L75 15 Z" fill="#0066aa" stroke="#00ffff" stroke-width="1"/>
-      <!-- Wheels -->
-      <circle cx="25" cy="35" r="10" fill="#333" stroke="#00ff00" stroke-width="3"/>
-      <circle cx="75" cy="35" r="10" fill="#333" stroke="#00ff00" stroke-width="3"/>
-      <circle cx="25" cy="35" r="4" fill="#00ff00"/>
-      <circle cx="75" cy="35" r="4" fill="#00ff00"/>
-      <!-- Neon glow effect -->
-      <ellipse cx="50" cy="42" rx="40" ry="3" fill="rgba(0, 255, 255, 0.3)"/>
-    </svg>
 
-    <div class="menu-stats">
-      <div class="stat-box">
-        <div class="stat-label">Total Coins</div>
-        <div class="stat-value" id="total-coins">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Best Score</div>
-        <div class="stat-value" id="best-score">0</div>
-      </div>
-    </div>
+<div id="menu">
+  <h1>🏎️ Lenny's Rider</h1>
+  <button class="btn" id="playBtn">▶ PLAY</button>
+  <button class="btn" id="garageBtn" style="background:#00ffff;color:#003">🚗 GARAGE</button>
+</div>
 
-    <div class="menu-buttons" id="menu-buttons">
-      <a href="#play" class="menu-btn play" id="play-link">▶ PLAY</a>
-      <a href="#garage" class="menu-btn garage" id="garage-link">🚗 GARAGE<span class="free-badge">FREE!</span></a>
-    </div>
-    <script>
-    (function(){
-      var playBtn = document.getElementById('play-link');
-      var garageBtn = document.getElementById('garage-link');
+<div id="game">
+  <canvas id="canvas"></canvas>
+</div>
 
-      function handlePlay(e) {
-        if(e) e.preventDefault();
-        playBtn.style.background = 'red'; // Visual feedback
-        setTimeout(function() {
-          if(typeof startGame === 'function') {
-            if(typeof initAudio === 'function') initAudio();
-            startGame();
-          } else {
-            alert('Game not loaded yet, try again');
-          }
-        }, 100);
-        return false;
-      }
+<button id="jump">JUMP</button>
+<div id="score">Score: <span id="scoreNum">0</span></div>
 
-      function handleGarage(e) {
-        if(e) e.preventDefault();
-        garageBtn.style.background = 'red'; // Visual feedback
-        setTimeout(function() {
-          if(typeof openGarage === 'function') {
-            if(typeof initAudio === 'function') initAudio();
-            openGarage();
-          } else {
-            alert('Game not loaded yet, try again');
-          }
-        }, 100);
-        return false;
-      }
+<script>
+// Simple game for Lenny
+var menu = document.getElementById('menu');
+var game = document.getElementById('game');
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var jumpBtn = document.getElementById('jump');
+var scoreEl = document.getElementById('score');
+var scoreNum = document.getElementById('scoreNum');
+var playBtn = document.getElementById('playBtn');
+var garageBtn = document.getElementById('garageBtn');
 
-      // Multiple event types for iOS compatibility
-      playBtn.onclick = handlePlay;
-      playBtn.ontouchstart = handlePlay;
-      garageBtn.onclick = handleGarage;
-      garageBtn.ontouchstart = handleGarage;
-    })();
-    </script>
+var playing = false;
+var score = 0;
+var car = { x: 150, y: 300, vy: 0, onGround: true };
+var speed = 5;
+var cameraX = 0;
+var track = [];
+var coins = [];
+var holding = false;
 
-    <div class="sound-controls">
-      <button class="sound-btn" id="sound-btn" ontouchend="toggleSound(); event.preventDefault();" onclick="toggleSound()">🔊</button>
-      <button class="sound-btn" id="music-btn" ontouchend="toggleMusic(); event.preventDefault();" onclick="toggleMusic()">🎵</button>
-    </div>
-  </div>
+// Generate track
+function makeTrack() {
+  track = [];
+  coins = [];
+  var x = -100;
+  var y = 400;
+  for (var i = 0; i < 500; i++) {
+    // Randomly vary height
+    if (i > 10 && Math.random() < 0.1) {
+      y = y + (Math.random() - 0.5) * 80;
+      if (y < 200) y = 200;
+      if (y > 500) y = 500;
+    }
+    track.push({ x: x, y: y });
+    // Add coins
+    if (Math.random() < 0.15) {
+      coins.push({ x: x, y: y - 60, got: false });
+    }
+    x += 100;
+  }
+}
 
-  <!-- GARAGE SCREEN -->
-  <div id="garage-screen">
-    <h2 class="garage-title">🚗 FREE GARAGE 🚗</h2>
-    <div class="cars-grid" id="cars-grid"></div>
-    <button class="back-btn" ontouchend="closeGarage(); event.preventDefault();" onclick="closeGarage()">← Back</button>
-  </div>
+function getGround(px) {
+  for (var i = 0; i < track.length - 1; i++) {
+    if (px >= track[i].x && px < track[i + 1].x) {
+      return track[i].y;
+    }
+  }
+  return 600;
+}
 
-  <!-- GAME CONTAINER -->
-  <div id="game-container">
-    <canvas id="game-canvas"></canvas>
-    <div id="touch-area"></div>
-    <div class="touch-hint">Hold anywhere to accelerate • Release to flip</div>
-  </div>
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
 
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-left">
-      <div class="hud-box score">
-        <div class="hud-label">Score</div>
-        <div class="hud-value" id="hud-score">0</div>
-      </div>
-      <div class="hud-box coins">
-        <div class="hud-label">Coins</div>
-        <div class="hud-value" id="hud-coins">0</div>
-      </div>
-    </div>
-    <div class="hud-right">
-      <div class="hud-box challenge">
-        <div class="hud-label">Challenge</div>
-        <div class="hud-value" id="hud-challenge">Score 50 points</div>
-        <div class="hud-progress">
-          <div class="hud-progress-fill" id="hud-progress" style="width: 0%"></div>
-        </div>
-      </div>
-    </div>
-  </div>
+function startGame() {
+  menu.className = 'hidden';
+  game.className = 'active';
+  jumpBtn.className = 'active';
+  scoreEl.className = 'active';
 
-  <!-- PAUSE BUTTON -->
-  <div id="pause-btn" ontouchend="togglePause(); event.preventDefault();" onclick="togglePause()">
-    <span></span>
-    <span></span>
-  </div>
+  resize();
+  makeTrack();
 
-  <!-- JUMP BUTTON (for touch devices) -->
-  <button id="jump-btn" class="game-btn" ontouchend="doJump(); event.preventDefault();" onclick="doJump()">JUMP</button>
+  car.x = 150;
+  car.y = getGround(150) - 20;
+  car.vy = 0;
+  car.onGround = true;
+  speed = 5;
+  score = 0;
+  cameraX = 0;
+  playing = true;
 
-  <!-- FLIP INDICATOR -->
-  <div id="flip-indicator">FLIP!</div>
+  loop();
+}
 
-  <!-- GAME OVER SCREEN -->
-  <div id="gameover-screen">
-    <h2 class="gameover-title">CRASHED!</h2>
-    <div class="gameover-stats">
-      <div class="gameover-stat">
-        <div class="gameover-stat-label">Score</div>
-        <div class="gameover-stat-value" id="final-score">0</div>
-      </div>
-      <div class="gameover-stat">
-        <div class="gameover-stat-label">Coins</div>
-        <div class="gameover-stat-value" id="final-coins">0</div>
-      </div>
-      <div class="gameover-stat">
-        <div class="gameover-stat-label">Flips</div>
-        <div class="gameover-stat-value" id="final-flips">0</div>
-      </div>
-    </div>
-    <div class="challenge-result incomplete" id="challenge-result">Challenge: Not Complete</div>
-    <div class="gameover-buttons">
-      <button class="gameover-btn retry" ontouchend="retryGame(); event.preventDefault();" onclick="retryGame()">↻ Retry</button>
-      <button class="gameover-btn menu" ontouchend="goToMenu(); event.preventDefault();" onclick="goToMenu()">☰ Menu</button>
-    </div>
-  </div>
+function jump() {
+  if (car.onGround) {
+    car.vy = -15;
+    car.onGround = false;
+  }
+}
 
-  <script>
-    // ============================================
-    // LENNY'S RIDER - GAME ENGINE
-    // ============================================
+function loop() {
+  if (!playing) return;
 
-    // Game State
-    const gameState = {
-      totalCoins: parseInt(localStorage.getItem('lennyCoins') || '0'),
-      bestScore: parseInt(localStorage.getItem('lennyBestScore') || '0'),
-      selectedCar: parseInt(localStorage.getItem('lennySelectedCar') || '0'),
-      currentChallenge: 0,
-      isPaused: false,
-      isPlaying: false,
-      soundEnabled: true,
-      musicEnabled: true
-    };
+  // Physics
+  car.vy += 0.5; // gravity
+  car.y += car.vy;
 
-    // ============================================
-    // AUDIO SYSTEM - Web Audio API
-    // ============================================
-    let audioCtx = null;
-    let musicGain = null;
-    let sfxGain = null;
-    let musicOscillators = [];
-    let engineOsc = null;
-    let engineGain = null;
+  // Accelerate when holding
+  if (holding) {
+    speed = Math.min(speed + 0.1, 20);
+  }
 
-    function initAudio() {
-      if (audioCtx) return;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  car.x += speed;
+  cameraX = car.x - 200;
 
-        // Master gains
-        musicGain = audioCtx.createGain();
-        musicGain.gain.value = 0.3;
-        musicGain.connect(audioCtx.destination);
+  // Ground collision
+  var groundY = getGround(car.x);
+  if (car.y >= groundY - 20) {
+    car.y = groundY - 20;
+    car.vy = 0;
+    car.onGround = true;
+  }
 
-        sfxGain = audioCtx.createGain();
-        sfxGain.gain.value = 0.5;
-        sfxGain.connect(audioCtx.destination);
-
-        // Resume audio context (required for iOS)
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-      } catch (e) {
-        console.log('Audio not supported');
+  // Collect coins
+  for (var i = 0; i < coins.length; i++) {
+    var c = coins[i];
+    if (!c.got) {
+      var dx = car.x - c.x;
+      var dy = car.y - c.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 40) {
+        c.got = true;
+        score += 10;
       }
     }
+  }
 
-    // Play a tone
-    function playTone(freq, duration, type = 'square', volume = 0.3, delay = 0) {
-      if (!audioCtx || !gameState.soundEnabled) return;
+  // Score from distance
+  score = Math.max(score, Math.floor(car.x / 50));
+  scoreNum.textContent = score;
 
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+  // Draw
+  ctx.fillStyle = '#1a0a2e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      osc.type = type;
-      osc.frequency.value = freq;
+  ctx.save();
+  ctx.translate(-cameraX, 0);
 
-      gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + delay + 0.01);
-      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + delay + duration);
-
-      osc.connect(gain);
-      gain.connect(sfxGain);
-
-      osc.start(audioCtx.currentTime + delay);
-      osc.stop(audioCtx.currentTime + delay + duration + 0.1);
+  // Draw track
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  for (var i = 0; i < track.length - 1; i++) {
+    var t = track[i];
+    var t2 = track[i + 1];
+    if (t.x > cameraX - 100 && t.x < cameraX + canvas.width + 100) {
+      ctx.moveTo(t.x, t.y);
+      ctx.lineTo(t2.x, t2.y);
     }
-
-    // Sound Effects
-    function playCoinSound() {
-      playTone(880, 0.1, 'square', 0.3);
-      playTone(1100, 0.1, 'square', 0.3, 0.08);
-      playTone(1320, 0.15, 'square', 0.3, 0.16);
-    }
-
-    function playFlipSound() {
-      playTone(440, 0.1, 'sawtooth', 0.3);
-      playTone(660, 0.1, 'sawtooth', 0.3, 0.05);
-      playTone(880, 0.15, 'sawtooth', 0.4, 0.1);
-      playTone(1100, 0.2, 'sawtooth', 0.3, 0.15);
-    }
-
-    function playJumpSound() {
-      if (!audioCtx || !gameState.soundEnabled) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-      osc.connect(gain);
-      gain.connect(sfxGain);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.25);
-    }
-
-    function playLandSound() {
-      playTone(100, 0.1, 'triangle', 0.4);
-      playTone(80, 0.15, 'triangle', 0.3, 0.05);
-    }
-
-    function playCrashSound() {
-      if (!audioCtx || !gameState.soundEnabled) return;
-      // Noise burst
-      const bufferSize = audioCtx.sampleRate * 0.3;
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-      }
-      const noise = audioCtx.createBufferSource();
-      noise.buffer = buffer;
-      const gain = audioCtx.createGain();
-      gain.gain.value = 0.5;
-      noise.connect(gain);
-      gain.connect(sfxGain);
-      noise.start();
-      // Low thud
-      playTone(60, 0.3, 'sine', 0.5);
-      playTone(40, 0.4, 'sine', 0.4, 0.1);
-    }
-
-    function playButtonSound() {
-      playTone(600, 0.08, 'square', 0.2);
-      playTone(800, 0.08, 'square', 0.2, 0.05);
-    }
-
-    // Engine sound
-    function startEngineSound() {
-      if (!audioCtx || !gameState.soundEnabled || engineOsc) return;
-
-      engineOsc = audioCtx.createOscillator();
-      engineGain = audioCtx.createGain();
-
-      engineOsc.type = 'sawtooth';
-      engineOsc.frequency.value = 80;
-      engineGain.gain.value = 0;
-
-      engineOsc.connect(engineGain);
-      engineGain.connect(sfxGain);
-      engineOsc.start();
-    }
-
-    function updateEngineSound(speed) {
-      if (!engineOsc || !engineGain) return;
-      const freq = 80 + speed * 8;
-      const vol = Math.min(speed / 20, 1) * 0.15;
-      engineOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
-      engineGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
-    }
-
-    function stopEngineSound() {
-      if (engineGain) {
-        engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-      }
-    }
-
-    // Background Music - Synthwave style
-    let musicPlaying = false;
-    let musicInterval = null;
-
-    function startMusic() {
-      if (!audioCtx || !gameState.musicEnabled || musicPlaying) return;
-      musicPlaying = true;
-
-      // Bass line notes (in Hz)
-      const bassLine = [65, 65, 82, 82, 98, 98, 82, 82]; // C2, E2, G2 pattern
-      const melody = [262, 330, 392, 330, 294, 262, 294, 330]; // Simple melody
-      let beatIndex = 0;
-      const bpm = 120;
-      const beatDuration = 60 / bpm;
-
-      musicInterval = setInterval(() => {
-        if (!gameState.musicEnabled || gameState.isPaused) return;
-
-        // Bass
-        const bassOsc = audioCtx.createOscillator();
-        const bassGain = audioCtx.createGain();
-        bassOsc.type = 'triangle';
-        bassOsc.frequency.value = bassLine[beatIndex % bassLine.length];
-        bassGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        bassGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + beatDuration * 0.8);
-        bassOsc.connect(bassGain);
-        bassGain.connect(musicGain);
-        bassOsc.start();
-        bassOsc.stop(audioCtx.currentTime + beatDuration);
-
-        // Melody (every 2 beats)
-        if (beatIndex % 2 === 0) {
-          const melodyOsc = audioCtx.createOscillator();
-          const melodyGain = audioCtx.createGain();
-          melodyOsc.type = 'square';
-          melodyOsc.frequency.value = melody[(beatIndex / 2) % melody.length];
-          melodyGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-          melodyGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + beatDuration * 1.5);
-          melodyOsc.connect(melodyGain);
-          melodyGain.connect(musicGain);
-          melodyOsc.start();
-          melodyOsc.stop(audioCtx.currentTime + beatDuration * 2);
-        }
-
-        // Hi-hat (every beat)
-        const hihatBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-        const hihatData = hihatBuffer.getChannelData(0);
-        for (let i = 0; i < hihatData.length; i++) {
-          hihatData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / hihatData.length, 3);
-        }
-        const hihat = audioCtx.createBufferSource();
-        hihat.buffer = hihatBuffer;
-        const hihatGain = audioCtx.createGain();
-        hihatGain.gain.value = 0.08;
-        hihat.connect(hihatGain);
-        hihatGain.connect(musicGain);
-        hihat.start();
-
-        beatIndex++;
-      }, beatDuration * 1000);
-    }
-
-    function stopMusic() {
-      musicPlaying = false;
-      if (musicInterval) {
-        clearInterval(musicInterval);
-        musicInterval = null;
-      }
-    }
-
-    // Car Definitions (ALL FREE!)
-    const cars = [
-      { name: 'Speed Demon', bodyColor: '#00ffff', wheelColor: '#00ff00', accentColor: '#ff00ff' },
-      { name: 'Fire Blaze', bodyColor: '#ff6600', wheelColor: '#ffff00', accentColor: '#ff0000' },
-      { name: 'Night Rider', bodyColor: '#9900ff', wheelColor: '#ff00ff', accentColor: '#00ffff' },
-      { name: 'Grass Hopper', bodyColor: '#00ff00', wheelColor: '#ffff00', accentColor: '#00ffff' },
-      { name: 'Pink Panther', bodyColor: '#ff00ff', wheelColor: '#00ffff', accentColor: '#ffff00' },
-      { name: 'Golden Star', bodyColor: '#ffcc00', wheelColor: '#ff6600', accentColor: '#ffffff' },
-      { name: 'Ice Breaker', bodyColor: '#66ffff', wheelColor: '#ffffff', accentColor: '#0066ff' },
-      { name: 'Lava Flow', bodyColor: '#ff3300', wheelColor: '#ffff00', accentColor: '#ff9900' },
-      { name: 'Ocean Wave', bodyColor: '#0066ff', wheelColor: '#00ffff', accentColor: '#00ff99' },
-      { name: 'Sunset', bodyColor: '#ff6699', wheelColor: '#ffcc00', accentColor: '#ff3366' },
-      { name: 'Forest', bodyColor: '#33cc33', wheelColor: '#99ff33', accentColor: '#006600' },
-      { name: 'Thunder', bodyColor: '#ffff00', wheelColor: '#ff00ff', accentColor: '#00ffff' }
-    ];
-
-    // Challenges
-    const challenges = [
-      { description: 'Score 50 points', target: 50, type: 'score' },
-      { description: 'Collect 10 coins', target: 10, type: 'coins' },
-      { description: 'Do 3 flips', target: 3, type: 'flips' },
-      { description: 'Score 100 points', target: 100, type: 'score' },
-      { description: 'Collect 25 coins', target: 25, type: 'coins' },
-      { description: 'Do 5 flips', target: 5, type: 'flips' },
-      { description: 'Score 200 points', target: 200, type: 'score' },
-      { description: 'Do 10 flips', target: 10, type: 'flips' },
-      { description: 'Collect 50 coins', target: 50, type: 'coins' },
-      { description: 'Score 500 points', target: 500, type: 'score' }
-    ];
-
-    // Canvas & Context
-    let canvas, ctx;
-    let animationId;
-
-    // Game Objects
-    let car = {
-      x: 150,
-      y: 300,
-      width: 60,
-      height: 30,
-      velocityX: 0,
-      velocityY: 0,
-      rotation: 0,
-      angularVelocity: 0,
-      isGrounded: false,
-      wheelRadius: 10
-    };
-
-    let gameData = {
-      score: 0,
-      coins: 0,
-      flips: 0,
-      distance: 0,
-      currentRotation: 0,
-      fullRotations: 0
-    };
-
-    // Track generation
-    let trackSegments = [];
-    let trackCoins = [];
-    let cameraX = 0;
-
-    // Input state
-    let isHolding = false;
-
-    // Update menu stats
-    function updateMenuStats() {
-      document.getElementById('total-coins').textContent = gameState.totalCoins;
-      document.getElementById('best-score').textContent = gameState.bestScore;
-    }
-
-    // Initialize garage
-    function initGarage() {
-      const grid = document.getElementById('cars-grid');
-      grid.innerHTML = '';
-      
-      cars.forEach((carData, index) => {
-        const card = document.createElement('div');
-        card.className = `car-card ${index === gameState.selectedCar ? 'selected' : ''}`;
-        card.onclick = () => selectCar(index);
-        
-        card.innerHTML = `
-          <svg class="car-preview" viewBox="0 0 100 45">
-            <path d="M15 30 L20 15 L35 10 L65 10 L80 15 L85 30 L15 30 Z" fill="${carData.bodyColor}" stroke="#ffffff" stroke-width="2"/>
-            <path d="M25 15 L30 12 L45 12 L48 15 Z" fill="#0066aa" stroke="${carData.bodyColor}" stroke-width="1"/>
-            <path d="M52 15 L55 12 L70 12 L75 15 Z" fill="#0066aa" stroke="${carData.bodyColor}" stroke-width="1"/>
-            <circle cx="25" cy="35" r="10" fill="#333" stroke="${carData.wheelColor}" stroke-width="3"/>
-            <circle cx="75" cy="35" r="10" fill="#333" stroke="${carData.wheelColor}" stroke-width="3"/>
-            <circle cx="25" cy="35" r="4" fill="${carData.wheelColor}"/>
-            <circle cx="75" cy="35" r="4" fill="${carData.wheelColor}"/>
-            <ellipse cx="50" cy="42" rx="40" ry="3" fill="${carData.accentColor}" opacity="0.3"/>
-          </svg>
-          <div class="car-name">${carData.name}</div>
-          <div class="car-free">★ FREE ★</div>
-        `;
-        
-        grid.appendChild(card);
-      });
-    }
-
-    function selectCar(index) {
-      playButtonSound();
-      gameState.selectedCar = index;
-      localStorage.setItem('lennySelectedCar', index);
-      initGarage();
-    }
-
-    function openGarage() {
-      initAudio();
-      playButtonSound();
-      document.getElementById('menu-screen').classList.add('hidden');
-      document.getElementById('garage-screen').classList.add('active');
-      initGarage();
-    }
-
-    function closeGarage() {
-      playButtonSound();
-      document.getElementById('garage-screen').classList.remove('active');
-      document.getElementById('menu-screen').classList.remove('hidden');
-    }
-
-    // Generate track with fun stages
-    function generateTrack() {
-      trackSegments = [];
-      trackCoins = [];
-
-      let x = -200;
-      let y = canvas.height - 150;
-      let stageNum = 0;
-
-      // Stage 1: Long flat intro to learn controls
-      for (let i = 0; i < 15; i++) {
-        trackSegments.push({ x: x, y: y, width: 100 });
-        if (i > 5 && i % 3 === 0) {
-          trackCoins.push({ x: x + 50, y: y - 50, collected: false });
-        }
-        x += 100;
-      }
-
-      // Generate fun stages
-      while (x < 50000) {
-        stageNum++;
-
-        // Every stage gets progressively more challenging
-        const difficulty = Math.min(stageNum / 10, 1);
-
-        // Stage patterns
-        const pattern = stageNum % 8;
-
-        if (pattern === 0) {
-          // Gentle hills - easy and fun
-          for (let i = 0; i < 6; i++) {
-            const hillY = y - Math.sin(i * 0.5) * 40;
-            trackSegments.push({ x: x, y: hillY, width: 100 });
-            if (i === 3) trackCoins.push({ x: x + 50, y: hillY - 60, collected: false });
-            x += 100;
-          }
-        } else if (pattern === 1) {
-          // Speed boost flat with coins
-          for (let i = 0; i < 8; i++) {
-            trackSegments.push({ x: x, y: y, width: 100 });
-            trackCoins.push({ x: x + 50, y: y - 40, collected: false });
-            x += 100;
-          }
-        } else if (pattern === 2) {
-          // Fun jump ramp!
-          // Build up ramp
-          for (let i = 0; i < 4; i++) {
-            y -= 25;
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-          // Coins in the air for the jump
-          trackCoins.push({ x: x + 75, y: y - 80, collected: false });
-          trackCoins.push({ x: x + 150, y: y - 100, collected: false });
-          trackCoins.push({ x: x + 225, y: y - 80, collected: false });
-          // Gap
-          x += 300;
-          // Landing ramp down
-          for (let i = 0; i < 3; i++) {
-            y += 20;
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-          // Flatten out
-          for (let i = 0; i < 4; i++) {
-            y = Math.min(y + 10, canvas.height - 150);
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-        } else if (pattern === 3) {
-          // Stair steps down - collect coins!
-          for (let i = 0; i < 5; i++) {
-            trackSegments.push({ x: x, y: y, width: 80 });
-            trackCoins.push({ x: x + 40, y: y - 50, collected: false });
-            x += 80;
-            y = Math.min(y + 35, canvas.height - 120);
-            trackSegments.push({ x: x, y: y, width: 80 });
-            x += 80;
-          }
-        } else if (pattern === 4) {
-          // Big air jump with flip opportunity!
-          // Steep ramp
-          for (let i = 0; i < 3; i++) {
-            y -= 45;
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-          // Big gap with coin trail
-          for (let i = 0; i < 5; i++) {
-            trackCoins.push({ x: x + i * 80, y: y - 60 - i * 20, collected: false });
-          }
-          x += 400;
-          // Soft landing
-          y = canvas.height - 180;
-          for (let i = 0; i < 5; i++) {
-            y = Math.min(y + 15, canvas.height - 150);
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-        } else if (pattern === 5) {
-          // Wave pattern - smooth and flowy
-          for (let i = 0; i < 10; i++) {
-            const waveY = y + Math.sin(i * 0.6) * 50;
-            trackSegments.push({ x: x, y: waveY, width: 100 });
-            if (i % 2 === 0) trackCoins.push({ x: x + 50, y: waveY - 50, collected: false });
-            x += 100;
-          }
-        } else if (pattern === 6) {
-          // Double jump!
-          for (let j = 0; j < 2; j++) {
-            // Small ramp
-            for (let i = 0; i < 2; i++) {
-              y -= 30;
-              trackSegments.push({ x: x, y: y, width: 100 });
-              x += 100;
-            }
-            // Coins
-            trackCoins.push({ x: x + 50, y: y - 60, collected: false });
-            // Gap
-            x += 180;
-            // Landing
-            for (let i = 0; i < 3; i++) {
-              y = Math.min(y + 20, canvas.height - 150);
-              trackSegments.push({ x: x, y: y, width: 100 });
-              x += 100;
-            }
-          }
-        } else {
-          // Coin bonanza flat section
-          for (let i = 0; i < 10; i++) {
-            trackSegments.push({ x: x, y: y, width: 100 });
-            // Zigzag coins
-            const coinOffset = (i % 2 === 0) ? -40 : -80;
-            trackCoins.push({ x: x + 50, y: y + coinOffset, collected: false });
-            x += 100;
-          }
-        }
-
-        // Always add some flat after each stage
-        for (let i = 0; i < 3; i++) {
-          y = Math.min(y + 5, canvas.height - 150);
-          trackSegments.push({ x: x, y: y, width: 100 });
-          x += 100;
-        }
-      }
-    }
-
-    // Get ground height at position
-    function getGroundHeight(posX) {
-      for (let i = trackSegments.length - 1; i >= 0; i--) {
-        const seg = trackSegments[i];
-        if (posX >= seg.x && posX < seg.x + seg.width) {
-          return seg.y;
-        }
-      }
-      return canvas.height + 500; // Below screen = death
-    }
-
-    // Reset car
-    function resetCar() {
-      car.x = 150;
-      car.velocityX = 5; // Start with some speed!
-      car.velocityY = 0;
-      car.rotation = 0;
-      car.angularVelocity = 0;
-      car.isGrounded = true;
-
-      gameData.score = 0;
-      gameData.coins = 0;
-      gameData.flips = 0;
-      gameData.distance = 0;
-      gameData.currentRotation = 0;
-      gameData.fullRotations = 0;
-
-      cameraX = 0;
-    }
-
-    // Position car on track after track is generated
-    function positionCarOnTrack() {
-      const groundY = getGroundHeight(car.x);
-      car.y = groundY - car.height / 2 - 5;
-    }
-
-    // Start game
-    function startGame() {
-      // Initialize audio on first user interaction (required for iOS)
-      initAudio();
-      playButtonSound();
-
-      document.getElementById('menu-screen').classList.add('hidden');
-      document.getElementById('game-container').classList.add('active');
-      document.getElementById('hud').classList.add('active');
-      document.getElementById('pause-btn').classList.add('active');
-      document.getElementById('jump-btn').classList.add('active');
-
-      canvas = document.getElementById('game-canvas');
-      ctx = canvas.getContext('2d');
-
-      resizeCanvas();
-      generateTrack(); // Generate track FIRST
-      resetCar();
-      positionCarOnTrack(); // Then position car ON the track
-
-      // Update challenge display
-      const challenge = challenges[gameState.currentChallenge % challenges.length];
-      document.getElementById('hud-challenge').textContent = challenge.description;
-
-      gameState.isPlaying = true;
-      gameState.isPaused = false;
-
-      // Start audio
-      startMusic();
-      startEngineSound();
-
-      gameLoop();
-    }
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-
-    // Game loop
-    function gameLoop() {
-      if (!gameState.isPlaying) return;
-      
-      if (!gameState.isPaused) {
-        update();
-        render();
-      }
-      
-      animationId = requestAnimationFrame(gameLoop);
-    }
-
-    // Update game state
-    function update() {
-      const gravity = 0.4; // Slightly less gravity for floatier jumps
-      const friction = 0.99; // Less friction = maintain speed better
-      const airResistance = 0.998;
-
-      // Apply gravity
-      car.velocityY += gravity;
-
-      // Apply acceleration if holding
-      if (isHolding && car.isGrounded) {
-        car.velocityX += 0.5; // Faster acceleration!
-      }
-
-      // Cap max speed
-      car.velocityX = Math.min(car.velocityX, 25);
-
-      // Apply rotation in air
-      if (!car.isGrounded) {
-        if (!isHolding) {
-          car.angularVelocity += 0.008; // Faster flip when releasing!
-        } else {
-          car.angularVelocity *= 0.95; // Slow rotation when holding
-        }
-        car.rotation += car.angularVelocity;
-
-        // Track full rotations for flip detection
-        const prevRotations = gameData.fullRotations;
-        gameData.currentRotation += car.angularVelocity;
-        gameData.fullRotations = Math.floor(Math.abs(gameData.currentRotation) / (Math.PI * 2));
-
-        if (gameData.fullRotations > prevRotations) {
-          // Completed a flip!
-          gameData.flips++;
-          gameData.score += 50;
-          showFlipIndicator();
-          playFlipSound();
-        }
-      } else {
-        // On ground - straighten out quickly
-        car.angularVelocity *= 0.5;
-        car.rotation *= 0.8;
-        gameData.currentRotation = 0;
-
-        // Apply friction
-        car.velocityX *= friction;
-      }
-      
-      // Apply air resistance
-      car.velocityX *= airResistance;
-      
-      // Update position
-      car.x += car.velocityX;
-      car.y += car.velocityY;
-      
-      // Ground collision
-      const groundY = getGroundHeight(car.x);
-      const carBottom = car.y + car.height / 2;
-      
-      if (carBottom >= groundY) {
-        // NO CRASHING! Always land safely and keep playing!
-
-        // Play land sound if we were in the air
-        if (!car.isGrounded) {
-          playLandSound();
-        }
-
-        car.y = groundY - car.height / 2;
-        car.velocityY = -car.velocityY * 0.2; // Small bounce
-        car.isGrounded = true;
-        car.rotation = 0; // Always straighten immediately on landing
-
-        // Add score for distance
-        if (car.velocityX > 1) {
-          gameData.score += Math.floor(car.velocityX / 5);
-        }
-      } else {
-        // Just left ground - play jump sound
-        if (car.isGrounded && car.velocityY < -2) {
-          playJumpSound();
-        }
-        car.isGrounded = false;
-      }
-      
-      // If falling off screen, respawn on track (no game over!)
-      if (car.y > canvas.height + 200) {
-        car.y = canvas.height - 200;
-        car.velocityY = 0;
-        car.rotation = 0;
-      }
-      
-      // Coin collection
-      trackCoins.forEach(coin => {
-        if (!coin.collected) {
-          const dx = car.x - coin.x;
-          const dy = car.y - coin.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 40) {
-            coin.collected = true;
-            gameData.coins++;
-            gameData.score += 10;
-            playCoinSound();
-          }
-        }
-      });
-
-      // Update engine sound based on speed
-      updateEngineSound(car.velocityX);
-
-      // Update camera
-      cameraX = car.x - canvas.width / 3;
-      
-      // Update HUD
-      document.getElementById('hud-score').textContent = gameData.score;
-      document.getElementById('hud-coins').textContent = gameData.coins;
-      
-      // Update challenge progress
-      const challenge = challenges[gameState.currentChallenge % challenges.length];
-      let progress = 0;
-      if (challenge.type === 'score') progress = (gameData.score / challenge.target) * 100;
-      if (challenge.type === 'coins') progress = (gameData.coins / challenge.target) * 100;
-      if (challenge.type === 'flips') progress = (gameData.flips / challenge.target) * 100;
-      document.getElementById('hud-progress').style.width = Math.min(progress, 100) + '%';
-    }
-
-    // Render
-    function render() {
-      // Background gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, '#0a0a2e');
-      gradient.addColorStop(0.5, '#1a0a2e');
-      gradient.addColorStop(1, '#0a1a2e');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Stars
-      ctx.fillStyle = 'white';
-      for (let i = 0; i < 50; i++) {
-        const sx = ((i * 137 + cameraX * 0.1) % canvas.width);
-        const sy = (i * 97) % (canvas.height * 0.6);
-        ctx.beginPath();
-        ctx.arc(sx, sy, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      ctx.save();
-      ctx.translate(-cameraX, 0);
-      
-      // Draw track
-      ctx.strokeStyle = '#00ffff';
-      ctx.lineWidth = 4;
-      ctx.shadowColor = '#00ffff';
-      ctx.shadowBlur = 15;
-      
-      trackSegments.forEach((seg, i) => {
-        if (seg.x > cameraX - 200 && seg.x < cameraX + canvas.width + 200) {
-          ctx.beginPath();
-          ctx.moveTo(seg.x, seg.y);
-          ctx.lineTo(seg.x + seg.width, seg.y);
-          ctx.stroke();
-          
-          // Connect to next segment
-          if (i < trackSegments.length - 1) {
-            const next = trackSegments[i + 1];
-            if (next.x === seg.x + seg.width) {
-              ctx.beginPath();
-              ctx.moveTo(seg.x + seg.width, seg.y);
-              ctx.lineTo(next.x, next.y);
-              ctx.stroke();
-            }
-          }
-        }
-      });
-      
-      ctx.shadowBlur = 0;
-      
-      // Draw coins
-      trackCoins.forEach(coin => {
-        if (!coin.collected && coin.x > cameraX - 50 && coin.x < cameraX + canvas.width + 50) {
-          ctx.save();
-          ctx.translate(coin.x, coin.y);
-          
-          // Coin glow
-          ctx.shadowColor = '#ffff00';
-          ctx.shadowBlur = 20;
-          
-          // Coin body
-          ctx.fillStyle = '#ffcc00';
-          ctx.beginPath();
-          ctx.arc(0, 0, 15, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Coin shine
-          ctx.fillStyle = '#ffff00';
-          ctx.beginPath();
-          ctx.arc(-3, -3, 5, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Dollar sign
-          ctx.fillStyle = '#996600';
-          ctx.font = 'bold 14px Orbitron';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('$', 0, 1);
-          
-          ctx.restore();
-        }
-      });
-      
-      // Draw car
-      const carStyle = cars[gameState.selectedCar];
-      
-      ctx.save();
-      ctx.translate(car.x, car.y);
-      ctx.rotate(car.rotation);
-      
-      // Car shadow/glow
-      ctx.shadowColor = carStyle.accentColor;
-      ctx.shadowBlur = 30;
-      
-      // Car body
-      ctx.fillStyle = carStyle.bodyColor;
+  }
+  ctx.stroke();
+
+  // Draw coins
+  ctx.fillStyle = '#ffcc00';
+  for (var i = 0; i < coins.length; i++) {
+    var c = coins[i];
+    if (!c.got && c.x > cameraX - 50 && c.x < cameraX + canvas.width + 50) {
       ctx.beginPath();
-      ctx.moveTo(-30, 5);
-      ctx.lineTo(-25, -10);
-      ctx.lineTo(-10, -15);
-      ctx.lineTo(20, -15);
-      ctx.lineTo(30, -5);
-      ctx.lineTo(30, 5);
-      ctx.closePath();
+      ctx.arc(c.x, c.y, 15, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Windows
-      ctx.fillStyle = '#0066aa';
-      ctx.beginPath();
-      ctx.moveTo(-20, -8);
-      ctx.lineTo(-15, -13);
-      ctx.lineTo(0, -13);
-      ctx.lineTo(3, -8);
-      ctx.closePath();
-      ctx.fill();
-      
-      ctx.beginPath();
-      ctx.moveTo(7, -8);
-      ctx.lineTo(10, -13);
-      ctx.lineTo(22, -13);
-      ctx.lineTo(25, -8);
-      ctx.closePath();
-      ctx.fill();
-      
-      ctx.shadowBlur = 0;
-      
-      // Wheels
-      const wheelY = 8;
-      
-      // Back wheel
-      ctx.fillStyle = '#333';
-      ctx.beginPath();
-      ctx.arc(-18, wheelY, car.wheelRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = carStyle.wheelColor;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.fillStyle = carStyle.wheelColor;
-      ctx.beginPath();
-      ctx.arc(-18, wheelY, 4, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Front wheel
-      ctx.fillStyle = '#333';
-      ctx.beginPath();
-      ctx.arc(18, wheelY, car.wheelRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = carStyle.wheelColor;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.fillStyle = carStyle.wheelColor;
-      ctx.beginPath();
-      ctx.arc(18, wheelY, 4, 0, Math.PI * 2);
-      ctx.fill();
-      
-      ctx.restore();
-      ctx.restore();
     }
+  }
 
-    // Show flip indicator
-    function showFlipIndicator() {
-      const indicator = document.getElementById('flip-indicator');
-      indicator.classList.add('show');
-      setTimeout(() => {
-        indicator.classList.remove('show');
-      }, 500);
-    }
+  // Draw car
+  ctx.fillStyle = '#00ffff';
+  ctx.fillRect(car.x - 30, car.y - 15, 60, 20);
+  ctx.fillStyle = '#00ff00';
+  ctx.beginPath();
+  ctx.arc(car.x - 15, car.y + 5, 10, 0, Math.PI * 2);
+  ctx.arc(car.x + 15, car.y + 5, 10, 0, Math.PI * 2);
+  ctx.fill();
 
-    // Game over
-    function gameOver() {
-      gameState.isPlaying = false;
-      cancelAnimationFrame(animationId);
+  ctx.restore();
 
-      // Play crash sound and stop engine/music
-      playCrashSound();
-      stopEngineSound();
-      stopMusic();
+  requestAnimationFrame(loop);
+}
 
-      // Update stats
-      gameState.totalCoins += gameData.coins;
-      localStorage.setItem('lennyCoins', gameState.totalCoins);
-      
-      if (gameData.score > gameState.bestScore) {
-        gameState.bestScore = gameData.score;
-        localStorage.setItem('lennyBestScore', gameState.bestScore);
-      }
-      
-      // Check challenge completion
-      const challenge = challenges[gameState.currentChallenge % challenges.length];
-      let completed = false;
-      if (challenge.type === 'score') completed = gameData.score >= challenge.target;
-      if (challenge.type === 'coins') completed = gameData.coins >= challenge.target;
-      if (challenge.type === 'flips') completed = gameData.flips >= challenge.target;
-      
-      if (completed) {
-        gameState.currentChallenge++;
-      }
-      
-      // Show game over screen
-      document.getElementById('final-score').textContent = gameData.score;
-      document.getElementById('final-coins').textContent = gameData.coins;
-      document.getElementById('final-flips').textContent = gameData.flips;
-      
-      const resultEl = document.getElementById('challenge-result');
-      resultEl.textContent = completed ? '✓ Challenge Complete!' : `Challenge: ${challenge.description}`;
-      resultEl.className = `challenge-result ${completed ? 'complete' : 'incomplete'}`;
-      
-      document.getElementById('hud').classList.remove('active');
-      document.getElementById('pause-btn').classList.remove('active');
-      document.getElementById('jump-btn').classList.remove('active');
-      document.getElementById('gameover-screen').classList.add('active');
-    }
+// Event listeners
+playBtn.onclick = function() { startGame(); };
+garageBtn.onclick = function() { alert('All cars are FREE! Pick any color in the game!'); };
+jumpBtn.onclick = function() { jump(); };
 
-    function retryGame() {
-      playButtonSound();
-      document.getElementById('gameover-screen').classList.remove('active');
-      document.getElementById('hud').classList.add('active');
-      document.getElementById('pause-btn').classList.add('active');
-      document.getElementById('jump-btn').classList.add('active');
+// Touch events
+document.body.ontouchstart = function(e) {
+  if (playing && e.target !== jumpBtn) {
+    holding = true;
+  }
+};
+document.body.ontouchend = function() { holding = false; };
 
-      generateTrack();
-      resetCar();
-      positionCarOnTrack();
+// Mouse events
+document.body.onmousedown = function(e) {
+  if (playing && e.target !== jumpBtn) {
+    holding = true;
+  }
+};
+document.body.onmouseup = function() { holding = false; };
 
-      const challenge = challenges[gameState.currentChallenge % challenges.length];
-      document.getElementById('hud-challenge').textContent = challenge.description;
+// Keyboard
+document.onkeydown = function(e) {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    jump();
+    holding = true;
+  }
+};
+document.onkeyup = function(e) {
+  if (e.code === 'Space') holding = false;
+};
 
-      gameState.isPlaying = true;
-      gameState.isPaused = false;
+// Resize
+window.onresize = resize;
+</script>
 
-      // Restart audio
-      startMusic();
-      startEngineSound();
-
-      gameLoop();
-    }
-
-    function goToMenu() {
-      playButtonSound();
-      document.getElementById('gameover-screen').classList.remove('active');
-      document.getElementById('game-container').classList.remove('active');
-      document.getElementById('menu-screen').classList.remove('hidden');
-      updateMenuStats();
-    }
-
-    function togglePause() {
-      playButtonSound();
-      gameState.isPaused = !gameState.isPaused;
-    }
-
-    function doJump() {
-      if (gameState.isPlaying && car.isGrounded && !gameState.isPaused) {
-        car.velocityY = -12;
-        car.isGrounded = false;
-        playJumpSound();
-      }
-    }
-
-    function toggleSound() {
-      gameState.soundEnabled = !gameState.soundEnabled;
-      playButtonSound();
-      updateSoundButtons();
-    }
-
-    function toggleMusic() {
-      gameState.musicEnabled = !gameState.musicEnabled;
-      playButtonSound();
-      if (gameState.musicEnabled && gameState.isPlaying) {
-        startMusic();
-      } else {
-        stopMusic();
-      }
-      updateSoundButtons();
-    }
-
-    function updateSoundButtons() {
-      const soundBtn = document.getElementById('sound-btn');
-      const musicBtn = document.getElementById('music-btn');
-      if (soundBtn) soundBtn.textContent = gameState.soundEnabled ? '🔊' : '🔇';
-      if (musicBtn) musicBtn.textContent = gameState.musicEnabled ? '🎵' : '🎵❌';
-    }
-
-    // ============================================
-    // INPUT HANDLING - iPad/iOS Compatible
-    // ============================================
-
-    function setupTouchControls() {
-      const touchArea = document.getElementById('touch-area');
-      const gameCanvas = document.getElementById('game-canvas');
-      const jumpBtn = document.getElementById('jump-btn');
-
-      // Jump button - works on both touch and click
-      if (jumpBtn) {
-        jumpBtn.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          doJump();
-        }, { passive: false });
-
-        jumpBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          doJump();
-        });
-      }
-
-      // Touch events on the dedicated touch area (for acceleration)
-      if (touchArea) {
-        touchArea.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          initAudio();
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          isHolding = true;
-        }, { passive: false });
-
-        touchArea.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          isHolding = false;
-        }, { passive: false });
-
-        touchArea.addEventListener('touchcancel', function(e) {
-          isHolding = false;
-        }, { passive: false });
-
-        touchArea.addEventListener('touchmove', function(e) {
-          e.preventDefault();
-        }, { passive: false });
-      }
-
-      // Also add to canvas as backup
-      if (gameCanvas) {
-        gameCanvas.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          initAudio();
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          isHolding = true;
-        }, { passive: false });
-
-        gameCanvas.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          isHolding = false;
-        }, { passive: false });
-      }
-
-      // Mouse events for desktop
-      document.addEventListener('mousedown', function(e) {
-        if (e.target.tagName === 'BUTTON' || e.target.id === 'jump-btn') return;
-        if (gameState.isPlaying) {
-          initAudio();
-          isHolding = true;
-        }
-      });
-
-      document.addEventListener('mouseup', function(e) {
-        isHolding = false;
-      });
-
-      // Keyboard support
-      document.addEventListener('keydown', function(e) {
-        if (e.code === 'Space') {
-          e.preventDefault();
-          // Jump when on ground!
-          if (gameState.isPlaying && car.isGrounded) {
-            car.velocityY = -12; // Jump force
-            car.isGrounded = false;
-            playJumpSound();
-          }
-          isHolding = true;
-        }
-        if (e.code === 'ArrowUp') {
-          e.preventDefault();
-          isHolding = true;
-        }
-      });
-
-      document.addEventListener('keyup', function(e) {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
-          isHolding = false;
-        }
-      });
-    }
-
-    // Window resize
-    window.addEventListener('resize', function() {
-      if (canvas) resizeCanvas();
-    });
-
-    // Initialize touch controls when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setupTouchControls);
-    } else {
-      setupTouchControls();
-    }
-
-    // Initialize
-    updateMenuStats();
-
-    // Make functions global for onclick handlers
-    window.startGame = startGame;
-    window.openGarage = openGarage;
-    window.closeGarage = closeGarage;
-    window.initAudio = initAudio;
-  </script>
-
-  <!-- EMERGENCY TEST BUTTON - outside all containers -->
-  <button id="emergency-play" style="
-    position: fixed !important;
-    bottom: 20px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 999999 !important;
-    padding: 30px 60px !important;
-    font-size: 24px !important;
-    background: red !important;
-    color: white !important;
-    border: 5px solid yellow !important;
-    border-radius: 20px !important;
-    font-weight: bold !important;
-  " onclick="alert('CLICK WORKS!'); if(typeof startGame==='function'){initAudio();startGame();}">
-    🎮 TAP HERE TO PLAY 🎮
-  </button>
 </body>
 </html>
