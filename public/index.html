@@ -849,73 +849,149 @@
       document.getElementById('menu-screen').classList.remove('hidden');
     }
 
-    // Generate track
+    // Generate track with fun stages
     function generateTrack() {
       trackSegments = [];
       trackCoins = [];
-      
+
       let x = -200;
       let y = canvas.height - 150;
-      
-      // Starting flat section
-      for (let i = 0; i < 10; i++) {
+      let stageNum = 0;
+
+      // Stage 1: Long flat intro to learn controls
+      for (let i = 0; i < 15; i++) {
         trackSegments.push({ x: x, y: y, width: 100 });
+        if (i > 5 && i % 3 === 0) {
+          trackCoins.push({ x: x + 50, y: y - 50, collected: false });
+        }
         x += 100;
       }
-      
-      // Generate varied terrain
+
+      // Generate fun stages
       while (x < 50000) {
-        const segmentType = Math.random();
-        
-        if (segmentType < 0.3) {
-          // Flat section
-          const count = Math.floor(Math.random() * 5) + 2;
-          for (let i = 0; i < count; i++) {
-            trackSegments.push({ x: x, y: y, width: 100 });
-            
-            // Add coin
-            if (Math.random() < 0.3) {
-              trackCoins.push({ x: x + 50, y: y - 50, collected: false });
-            }
-            
+        stageNum++;
+
+        // Every stage gets progressively more challenging
+        const difficulty = Math.min(stageNum / 10, 1);
+
+        // Stage patterns
+        const pattern = stageNum % 8;
+
+        if (pattern === 0) {
+          // Gentle hills - easy and fun
+          for (let i = 0; i < 6; i++) {
+            const hillY = y - Math.sin(i * 0.5) * 40;
+            trackSegments.push({ x: x, y: hillY, width: 100 });
+            if (i === 3) trackCoins.push({ x: x + 50, y: hillY - 60, collected: false });
             x += 100;
           }
-        } else if (segmentType < 0.5) {
-          // Ramp up
-          const count = Math.floor(Math.random() * 4) + 2;
-          for (let i = 0; i < count; i++) {
-            y -= 30;
+        } else if (pattern === 1) {
+          // Speed boost flat with coins
+          for (let i = 0; i < 8; i++) {
+            trackSegments.push({ x: x, y: y, width: 100 });
+            trackCoins.push({ x: x + 50, y: y - 40, collected: false });
+            x += 100;
+          }
+        } else if (pattern === 2) {
+          // Fun jump ramp!
+          // Build up ramp
+          for (let i = 0; i < 4; i++) {
+            y -= 25;
             trackSegments.push({ x: x, y: y, width: 100 });
             x += 100;
           }
-        } else if (segmentType < 0.7) {
-          // Ramp down
-          const count = Math.floor(Math.random() * 4) + 2;
-          for (let i = 0; i < count; i++) {
-            y += 30;
-            y = Math.min(y, canvas.height - 100);
-            trackSegments.push({ x: x, y: y, width: 100 });
-            x += 100;
-          }
-        } else if (segmentType < 0.85) {
-          // Jump gap
-          const gapSize = Math.floor(Math.random() * 150) + 100;
-          
-          // Add coin in the air
-          trackCoins.push({ x: x + gapSize / 2, y: y - 100, collected: false });
-          
-          x += gapSize;
-        } else {
-          // Loop ramp
+          // Coins in the air for the jump
+          trackCoins.push({ x: x + 75, y: y - 80, collected: false });
+          trackCoins.push({ x: x + 150, y: y - 100, collected: false });
+          trackCoins.push({ x: x + 225, y: y - 80, collected: false });
+          // Gap
+          x += 300;
+          // Landing ramp down
           for (let i = 0; i < 3; i++) {
-            y -= 40;
+            y += 20;
             trackSegments.push({ x: x, y: y, width: 100 });
             x += 100;
           }
-          
-          // Add coins on ramp
-          trackCoins.push({ x: x - 150, y: y - 30, collected: false });
-          trackCoins.push({ x: x - 50, y: y - 80, collected: false });
+          // Flatten out
+          for (let i = 0; i < 4; i++) {
+            y = Math.min(y + 10, canvas.height - 150);
+            trackSegments.push({ x: x, y: y, width: 100 });
+            x += 100;
+          }
+        } else if (pattern === 3) {
+          // Stair steps down - collect coins!
+          for (let i = 0; i < 5; i++) {
+            trackSegments.push({ x: x, y: y, width: 80 });
+            trackCoins.push({ x: x + 40, y: y - 50, collected: false });
+            x += 80;
+            y = Math.min(y + 35, canvas.height - 120);
+            trackSegments.push({ x: x, y: y, width: 80 });
+            x += 80;
+          }
+        } else if (pattern === 4) {
+          // Big air jump with flip opportunity!
+          // Steep ramp
+          for (let i = 0; i < 3; i++) {
+            y -= 45;
+            trackSegments.push({ x: x, y: y, width: 100 });
+            x += 100;
+          }
+          // Big gap with coin trail
+          for (let i = 0; i < 5; i++) {
+            trackCoins.push({ x: x + i * 80, y: y - 60 - i * 20, collected: false });
+          }
+          x += 400;
+          // Soft landing
+          y = canvas.height - 180;
+          for (let i = 0; i < 5; i++) {
+            y = Math.min(y + 15, canvas.height - 150);
+            trackSegments.push({ x: x, y: y, width: 100 });
+            x += 100;
+          }
+        } else if (pattern === 5) {
+          // Wave pattern - smooth and flowy
+          for (let i = 0; i < 10; i++) {
+            const waveY = y + Math.sin(i * 0.6) * 50;
+            trackSegments.push({ x: x, y: waveY, width: 100 });
+            if (i % 2 === 0) trackCoins.push({ x: x + 50, y: waveY - 50, collected: false });
+            x += 100;
+          }
+        } else if (pattern === 6) {
+          // Double jump!
+          for (let j = 0; j < 2; j++) {
+            // Small ramp
+            for (let i = 0; i < 2; i++) {
+              y -= 30;
+              trackSegments.push({ x: x, y: y, width: 100 });
+              x += 100;
+            }
+            // Coins
+            trackCoins.push({ x: x + 50, y: y - 60, collected: false });
+            // Gap
+            x += 180;
+            // Landing
+            for (let i = 0; i < 3; i++) {
+              y = Math.min(y + 20, canvas.height - 150);
+              trackSegments.push({ x: x, y: y, width: 100 });
+              x += 100;
+            }
+          }
+        } else {
+          // Coin bonanza flat section
+          for (let i = 0; i < 10; i++) {
+            trackSegments.push({ x: x, y: y, width: 100 });
+            // Zigzag coins
+            const coinOffset = (i % 2 === 0) ? -40 : -80;
+            trackCoins.push({ x: x + 50, y: y + coinOffset, collected: false });
+            x += 100;
+          }
+        }
+
+        // Always add some flat after each stage
+        for (let i = 0; i < 3; i++) {
+          y = Math.min(y + 5, canvas.height - 150);
+          trackSegments.push({ x: x, y: y, width: 100 });
+          x += 100;
         }
       }
     }
@@ -934,21 +1010,26 @@
     // Reset car
     function resetCar() {
       car.x = 150;
-      car.y = 300;
-      car.velocityX = 0;
+      car.velocityX = 5; // Start with some speed!
       car.velocityY = 0;
       car.rotation = 0;
       car.angularVelocity = 0;
-      car.isGrounded = false;
-      
+      car.isGrounded = true;
+
       gameData.score = 0;
       gameData.coins = 0;
       gameData.flips = 0;
       gameData.distance = 0;
       gameData.currentRotation = 0;
       gameData.fullRotations = 0;
-      
+
       cameraX = 0;
+    }
+
+    // Position car on track after track is generated
+    function positionCarOnTrack() {
+      const groundY = getGroundHeight(car.x);
+      car.y = groundY - car.height / 2 - 5;
     }
 
     // Start game
@@ -957,21 +1038,22 @@
       document.getElementById('game-container').classList.add('active');
       document.getElementById('hud').classList.add('active');
       document.getElementById('pause-btn').classList.add('active');
-      
+
       canvas = document.getElementById('game-canvas');
       ctx = canvas.getContext('2d');
-      
+
       resizeCanvas();
+      generateTrack(); // Generate track FIRST
       resetCar();
-      generateTrack();
-      
+      positionCarOnTrack(); // Then position car ON the track
+
       // Update challenge display
       const challenge = challenges[gameState.currentChallenge % challenges.length];
       document.getElementById('hud-challenge').textContent = challenge.description;
-      
+
       gameState.isPlaying = true;
       gameState.isPaused = false;
-      
+
       gameLoop();
     }
 
@@ -994,30 +1076,35 @@
 
     // Update game state
     function update() {
-      const gravity = 0.5;
-      const friction = 0.98;
-      const airResistance = 0.995;
-      
+      const gravity = 0.4; // Slightly less gravity for floatier jumps
+      const friction = 0.99; // Less friction = maintain speed better
+      const airResistance = 0.998;
+
       // Apply gravity
       car.velocityY += gravity;
-      
+
       // Apply acceleration if holding
       if (isHolding && car.isGrounded) {
-        car.velocityX += 0.3;
+        car.velocityX += 0.5; // Faster acceleration!
       }
-      
+
+      // Cap max speed
+      car.velocityX = Math.min(car.velocityX, 25);
+
       // Apply rotation in air
       if (!car.isGrounded) {
         if (!isHolding) {
-          car.angularVelocity += 0.003; // Auto-rotate when not holding
+          car.angularVelocity += 0.008; // Faster flip when releasing!
+        } else {
+          car.angularVelocity *= 0.95; // Slow rotation when holding
         }
         car.rotation += car.angularVelocity;
-        
+
         // Track full rotations for flip detection
         const prevRotations = gameData.fullRotations;
         gameData.currentRotation += car.angularVelocity;
         gameData.fullRotations = Math.floor(Math.abs(gameData.currentRotation) / (Math.PI * 2));
-        
+
         if (gameData.fullRotations > prevRotations) {
           // Completed a flip!
           gameData.flips++;
@@ -1025,11 +1112,11 @@
           showFlipIndicator();
         }
       } else {
-        // On ground - straighten out
-        car.angularVelocity *= 0.8;
-        car.rotation *= 0.9;
+        // On ground - straighten out quickly
+        car.angularVelocity *= 0.5;
+        car.rotation *= 0.8;
         gameData.currentRotation = 0;
-        
+
         // Apply friction
         car.velocityX *= friction;
       }
@@ -1046,18 +1133,28 @@
       const carBottom = car.y + car.height / 2;
       
       if (carBottom >= groundY) {
-        // Check if landing is too steep (crash)
-        const landingAngle = Math.abs(car.rotation % (Math.PI * 2));
-        if (landingAngle > Math.PI / 3 && landingAngle < Math.PI * 5/3) {
-          // Crashed!
-          gameOver();
-          return;
+        // Normalize rotation to 0-2PI range
+        let normalizedRotation = car.rotation % (Math.PI * 2);
+        if (normalizedRotation < 0) normalizedRotation += Math.PI * 2;
+
+        // Check if landing is too steep (crash) - more forgiving!
+        // Only crash if car is nearly upside down (between 100 and 260 degrees)
+        const crashZoneStart = Math.PI * 0.55; // ~100 degrees
+        const crashZoneEnd = Math.PI * 1.45;   // ~260 degrees
+
+        if (normalizedRotation > crashZoneStart && normalizedRotation < crashZoneEnd) {
+          // Crashed! But give a small grace period at start
+          if (gameData.score > 5 || car.x > 300) {
+            gameOver();
+            return;
+          }
         }
-        
+
         car.y = groundY - car.height / 2;
-        car.velocityY = -car.velocityY * 0.3;
+        car.velocityY = -car.velocityY * 0.2; // Less bounce
         car.isGrounded = true;
-        
+        car.rotation *= 0.7; // Quickly straighten on landing
+
         // Add score for distance
         if (car.velocityX > 1) {
           gameData.score += Math.floor(car.velocityX / 5);
@@ -1316,7 +1413,20 @@
 
     function retryGame() {
       document.getElementById('gameover-screen').classList.remove('active');
-      startGame();
+      document.getElementById('hud').classList.add('active');
+      document.getElementById('pause-btn').classList.add('active');
+
+      generateTrack();
+      resetCar();
+      positionCarOnTrack();
+
+      const challenge = challenges[gameState.currentChallenge % challenges.length];
+      document.getElementById('hud-challenge').textContent = challenge.description;
+
+      gameState.isPlaying = true;
+      gameState.isPaused = false;
+
+      gameLoop();
     }
 
     function goToMenu() {
