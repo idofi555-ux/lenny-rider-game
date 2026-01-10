@@ -722,10 +722,50 @@
       </div>
     </div>
 
-    <div class="menu-buttons">
-      <a href="#" class="menu-btn play" onclick="initAudio();startGame();return false;">▶ PLAY</a>
-      <a href="#" class="menu-btn garage" onclick="initAudio();openGarage();return false;">🚗 GARAGE<span class="free-badge">FREE!</span></a>
+    <div class="menu-buttons" id="menu-buttons">
+      <a href="#play" class="menu-btn play" id="play-link">▶ PLAY</a>
+      <a href="#garage" class="menu-btn garage" id="garage-link">🚗 GARAGE<span class="free-badge">FREE!</span></a>
     </div>
+    <script>
+    (function(){
+      var playBtn = document.getElementById('play-link');
+      var garageBtn = document.getElementById('garage-link');
+
+      function handlePlay(e) {
+        if(e) e.preventDefault();
+        playBtn.style.background = 'red'; // Visual feedback
+        setTimeout(function() {
+          if(typeof startGame === 'function') {
+            if(typeof initAudio === 'function') initAudio();
+            startGame();
+          } else {
+            alert('Game not loaded yet, try again');
+          }
+        }, 100);
+        return false;
+      }
+
+      function handleGarage(e) {
+        if(e) e.preventDefault();
+        garageBtn.style.background = 'red'; // Visual feedback
+        setTimeout(function() {
+          if(typeof openGarage === 'function') {
+            if(typeof initAudio === 'function') initAudio();
+            openGarage();
+          } else {
+            alert('Game not loaded yet, try again');
+          }
+        }, 100);
+        return false;
+      }
+
+      // Multiple event types for iOS compatibility
+      playBtn.onclick = handlePlay;
+      playBtn.ontouchstart = handlePlay;
+      garageBtn.onclick = handleGarage;
+      garageBtn.ontouchstart = handleGarage;
+    })();
+    </script>
 
     <div class="sound-controls">
       <button class="sound-btn" id="sound-btn" ontouchend="toggleSound(); event.preventDefault();" onclick="toggleSound()">🔊</button>
