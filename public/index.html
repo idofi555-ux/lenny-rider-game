@@ -1965,5 +1965,23 @@
     window.closeGarage = closeGarage;
     window.initAudio = initAudio;
   </script>
+
+  <!-- EMERGENCY TEST BUTTON - outside all containers -->
+  <button id="emergency-play" style="
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 999999 !important;
+    padding: 30px 60px !important;
+    font-size: 24px !important;
+    background: red !important;
+    color: white !important;
+    border: 5px solid yellow !important;
+    border-radius: 20px !important;
+    font-weight: bold !important;
+  " onclick="alert('CLICK WORKS!'); if(typeof startGame==='function'){initAudio();startGame();}">
+    🎮 TAP HERE TO PLAY 🎮
+  </button>
 </body>
 </html>
