@@ -146,11 +146,15 @@
       text-transform: uppercase;
       letter-spacing: 3px;
       position: relative;
-      overflow: visible;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
+      text-decoration: none;
+    }
+
+    .menu-btn:active {
+      opacity: 0.8;
+      transform: scale(0.98);
     }
 
     .menu-btn.play {
@@ -719,8 +723,8 @@
     </div>
 
     <div class="menu-buttons">
-      <div class="menu-btn play" id="play-btn" role="button" tabindex="0">▶ PLAY</div>
-      <div class="menu-btn garage" id="garage-btn" role="button" tabindex="0">🚗 GARAGE<span class="free-badge">FREE!</span></div>
+      <a href="#" class="menu-btn play" onclick="initAudio();startGame();return false;">▶ PLAY</a>
+      <a href="#" class="menu-btn garage" onclick="initAudio();openGarage();return false;">🚗 GARAGE<span class="free-badge">FREE!</span></a>
     </div>
 
     <div class="sound-controls">
@@ -1915,98 +1919,11 @@
     // Initialize
     updateMenuStats();
 
-    // ============================================
-    // iOS Safari Button Fix - Using touchstart for instant response
-    // ============================================
-    (function() {
-      var playBtn = document.getElementById('play-btn');
-      var garageBtn = document.getElementById('garage-btn');
-      var backBtn = document.querySelector('.back-btn');
-
-      // Track if touch is happening to prevent double-fire
-      var touchHandled = false;
-
-      function handlePlay() {
-        if (touchHandled) { touchHandled = false; return; }
-        initAudio();
-        startGame();
-      }
-
-      function handleGarage() {
-        if (touchHandled) { touchHandled = false; return; }
-        initAudio();
-        openGarage();
-      }
-
-      function handleBack() {
-        if (touchHandled) { touchHandled = false; return; }
-        closeGarage();
-      }
-
-      // PLAY BUTTON
-      if (playBtn) {
-        playBtn.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          touchHandled = true;
-          initAudio();
-          startGame();
-        }, {passive: false});
-        playBtn.addEventListener('click', handlePlay);
-      }
-
-      // GARAGE BUTTON
-      if (garageBtn) {
-        garageBtn.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          touchHandled = true;
-          initAudio();
-          openGarage();
-        }, {passive: false});
-        garageBtn.addEventListener('click', handleGarage);
-      }
-
-      // BACK BUTTON
-      if (backBtn) {
-        backBtn.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          touchHandled = true;
-          closeGarage();
-        }, {passive: false});
-        backBtn.addEventListener('click', handleBack);
-      }
-
-      // FALLBACK: Catch all touches on menu screen
-      var menuScreen = document.getElementById('menu-screen');
-      if (menuScreen) {
-        menuScreen.addEventListener('touchstart', function(e) {
-          var target = e.target;
-          // Check if touched play button or its parent
-          if (target.id === 'play-btn' || target.closest('#play-btn')) {
-            e.preventDefault();
-            initAudio();
-            startGame();
-          }
-          // Check if touched garage button or its parent
-          if (target.id === 'garage-btn' || target.closest('#garage-btn')) {
-            e.preventDefault();
-            initAudio();
-            openGarage();
-          }
-        }, {passive: false});
-      }
-
-      // FALLBACK: Catch all touches on garage screen
-      var garageScreen = document.getElementById('garage-screen');
-      if (garageScreen) {
-        garageScreen.addEventListener('touchstart', function(e) {
-          var target = e.target;
-          if (target.classList.contains('back-btn') || target.closest('.back-btn')) {
-            e.preventDefault();
-            closeGarage();
-          }
-        }, {passive: false});
-      }
-    })();
+    // Make functions global for onclick handlers
+    window.startGame = startGame;
+    window.openGarage = openGarage;
+    window.closeGarage = closeGarage;
+    window.initAudio = initAudio;
   </script>
 </body>
 </html>
