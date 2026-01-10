@@ -153,6 +153,15 @@
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* iOS Safari fixes */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
     }
 
     .menu-btn.play {
@@ -721,13 +730,8 @@
     </div>
 
     <div class="menu-buttons">
-      <button class="menu-btn play" ontouchend="startGame(); event.preventDefault();" onclick="startGame()">
-        ▶ Play
-      </button>
-      <button class="menu-btn garage" ontouchend="openGarage(); event.preventDefault();" onclick="openGarage()">
-        🚗 Garage
-        <span class="free-badge">FREE!</span>
-      </button>
+      <button type="button" class="menu-btn play" id="play-btn">▶ Play</button>
+      <button type="button" class="menu-btn garage" id="garage-btn">🚗 Garage<span class="free-badge">FREE!</span></button>
     </div>
 
     <div class="sound-controls">
@@ -1922,24 +1926,61 @@
     // Initialize
     updateMenuStats();
 
-    // iPad button fix - add touch listeners
-    document.querySelector('.menu-btn.play').addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      startGame();
-    }, {passive: false});
+    // ============================================
+    // iOS Safari Button Fix - CRITICAL
+    // ============================================
+    (function() {
+      var playBtn = document.getElementById('play-btn');
+      var garageBtn = document.getElementById('garage-btn');
+      var backBtn = document.querySelector('.back-btn');
 
-    document.querySelector('.menu-btn.garage').addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      openGarage();
-    }, {passive: false});
+      function handlePlay(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        initAudio();
+        startGame();
+      }
 
-    document.querySelector('.back-btn').addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeGarage();
-    }, {passive: false});
+      function handleGarage(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        initAudio();
+        openGarage();
+      }
+
+      function handleBack(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        closeGarage();
+      }
+
+      // Add BOTH touchend and click for maximum compatibility
+      if (playBtn) {
+        playBtn.ontouchend = handlePlay;
+        playBtn.onclick = handlePlay;
+      }
+
+      if (garageBtn) {
+        garageBtn.ontouchend = handleGarage;
+        garageBtn.onclick = handleGarage;
+      }
+
+      if (backBtn) {
+        backBtn.ontouchend = handleBack;
+        backBtn.onclick = handleBack;
+      }
+
+      // Also handle tap as pointerup for newer browsers
+      if (playBtn) playBtn.onpointerup = handlePlay;
+      if (garageBtn) garageBtn.onpointerup = handleGarage;
+      if (backBtn) backBtn.onpointerup = handleBack;
+    })();
   </script>
 </body>
 </html>
