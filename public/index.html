@@ -736,17 +736,6 @@
     </div>
   </div>
 
-  <script>
-  document.querySelector('.menu-btn.play').addEventListener('touchend', function(e) {
-    e.preventDefault();
-    startGame();
-  });
-  document.querySelector('.menu-btn.garage').addEventListener('touchend', function(e) {
-    e.preventDefault();
-    openGarage();
-  });
-  </script>
-
   <!-- GARAGE SCREEN -->
   <div id="garage-screen">
     <h2 class="garage-title">🚗 FREE GARAGE 🚗</h2>
@@ -1932,6 +1921,25 @@
 
     // Initialize
     updateMenuStats();
+
+    // iPad button fix - add touch listeners
+    document.querySelector('.menu-btn.play').addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      startGame();
+    }, {passive: false});
+
+    document.querySelector('.menu-btn.garage').addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openGarage();
+    }, {passive: false});
+
+    document.querySelector('.back-btn').addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeGarage();
+    }, {passive: false});
   </script>
 </body>
 </html>
