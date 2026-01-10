@@ -15,7 +15,6 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
 
     :root {
@@ -31,7 +30,6 @@
     html, body {
       height: 100%;
       width: 100%;
-      position: fixed;
       overflow: hidden;
     }
 
@@ -39,9 +37,6 @@
       font-family: 'Rajdhani', sans-serif;
       background: var(--dark-bg);
       color: white;
-      touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
@@ -150,18 +145,12 @@
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 3px;
-      transition: all 0.3s ease;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       display: flex;
       align-items: center;
       justify-content: center;
-      /* iOS Safari fixes */
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      -webkit-touch-callout: none;
-      touch-action: manipulation;
+      z-index: 9999;
     }
 
     .menu-btn.play {
@@ -730,8 +719,8 @@
     </div>
 
     <div class="menu-buttons">
-      <button type="button" class="menu-btn play" id="play-btn">▶ Play</button>
-      <button type="button" class="menu-btn garage" id="garage-btn">🚗 Garage<span class="free-badge">FREE!</span></button>
+      <div class="menu-btn play" id="play-btn" role="button" tabindex="0">▶ PLAY</div>
+      <div class="menu-btn garage" id="garage-btn" role="button" tabindex="0">🚗 GARAGE<span class="free-badge">FREE!</span></div>
     </div>
 
     <div class="sound-controls">
@@ -1927,59 +1916,96 @@
     updateMenuStats();
 
     // ============================================
-    // iOS Safari Button Fix - CRITICAL
+    // iOS Safari Button Fix - Using touchstart for instant response
     // ============================================
     (function() {
       var playBtn = document.getElementById('play-btn');
       var garageBtn = document.getElementById('garage-btn');
       var backBtn = document.querySelector('.back-btn');
 
-      function handlePlay(e) {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+      // Track if touch is happening to prevent double-fire
+      var touchHandled = false;
+
+      function handlePlay() {
+        if (touchHandled) { touchHandled = false; return; }
         initAudio();
         startGame();
       }
 
-      function handleGarage(e) {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+      function handleGarage() {
+        if (touchHandled) { touchHandled = false; return; }
         initAudio();
         openGarage();
       }
 
-      function handleBack(e) {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+      function handleBack() {
+        if (touchHandled) { touchHandled = false; return; }
         closeGarage();
       }
 
-      // Add BOTH touchend and click for maximum compatibility
+      // PLAY BUTTON
       if (playBtn) {
-        playBtn.ontouchend = handlePlay;
-        playBtn.onclick = handlePlay;
+        playBtn.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          touchHandled = true;
+          initAudio();
+          startGame();
+        }, {passive: false});
+        playBtn.addEventListener('click', handlePlay);
       }
 
+      // GARAGE BUTTON
       if (garageBtn) {
-        garageBtn.ontouchend = handleGarage;
-        garageBtn.onclick = handleGarage;
+        garageBtn.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          touchHandled = true;
+          initAudio();
+          openGarage();
+        }, {passive: false});
+        garageBtn.addEventListener('click', handleGarage);
       }
 
+      // BACK BUTTON
       if (backBtn) {
-        backBtn.ontouchend = handleBack;
-        backBtn.onclick = handleBack;
+        backBtn.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          touchHandled = true;
+          closeGarage();
+        }, {passive: false});
+        backBtn.addEventListener('click', handleBack);
       }
 
-      // Also handle tap as pointerup for newer browsers
-      if (playBtn) playBtn.onpointerup = handlePlay;
-      if (garageBtn) garageBtn.onpointerup = handleGarage;
-      if (backBtn) backBtn.onpointerup = handleBack;
+      // FALLBACK: Catch all touches on menu screen
+      var menuScreen = document.getElementById('menu-screen');
+      if (menuScreen) {
+        menuScreen.addEventListener('touchstart', function(e) {
+          var target = e.target;
+          // Check if touched play button or its parent
+          if (target.id === 'play-btn' || target.closest('#play-btn')) {
+            e.preventDefault();
+            initAudio();
+            startGame();
+          }
+          // Check if touched garage button or its parent
+          if (target.id === 'garage-btn' || target.closest('#garage-btn')) {
+            e.preventDefault();
+            initAudio();
+            openGarage();
+          }
+        }, {passive: false});
+      }
+
+      // FALLBACK: Catch all touches on garage screen
+      var garageScreen = document.getElementById('garage-screen');
+      if (garageScreen) {
+        garageScreen.addEventListener('touchstart', function(e) {
+          var target = e.target;
+          if (target.classList.contains('back-btn') || target.closest('.back-btn')) {
+            e.preventDefault();
+            closeGarage();
+          }
+        }, {passive: false});
+      }
     })();
   </script>
 </body>
