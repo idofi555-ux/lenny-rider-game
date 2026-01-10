@@ -736,6 +736,17 @@
     </div>
   </div>
 
+  <script>
+  document.querySelector('.menu-btn.play').addEventListener('touchend', function(e) {
+    e.preventDefault();
+    startGame();
+  });
+  document.querySelector('.menu-btn.garage').addEventListener('touchend', function(e) {
+    e.preventDefault();
+    openGarage();
+  });
+  </script>
+
   <!-- GARAGE SCREEN -->
   <div id="garage-screen">
     <h2 class="garage-title">🚗 FREE GARAGE 🚗</h2>
