@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Lenny's Rider - Free Stunt Racing Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,12 +28,22 @@
       --darker-bg: #050510;
     }
 
+    html, body {
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
+    }
+
     body {
       font-family: 'Rajdhani', sans-serif;
       background: var(--dark-bg);
       color: white;
-      overflow: hidden;
-      touch-action: manipulation;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
     /* MENU SCREEN */
@@ -186,6 +199,33 @@
     @keyframes badgePulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.1); }
+    }
+
+    /* SOUND CONTROLS */
+    .sound-controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .sound-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-blue);
+      background: rgba(0, 255, 255, 0.1);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sound-btn:hover {
+      background: rgba(0, 255, 255, 0.3);
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
     }
 
     /* GARAGE SCREEN */
@@ -646,6 +686,11 @@
         <span class="free-badge">FREE!</span>
       </button>
     </div>
+
+    <div class="sound-controls">
+      <button class="sound-btn" id="sound-btn" onclick="toggleSound()">🔊</button>
+      <button class="sound-btn" id="music-btn" onclick="toggleMusic()">🎵</button>
+    </div>
   </div>
 
   <!-- GARAGE SCREEN -->
@@ -729,8 +774,224 @@
       selectedCar: parseInt(localStorage.getItem('lennySelectedCar') || '0'),
       currentChallenge: 0,
       isPaused: false,
-      isPlaying: false
+      isPlaying: false,
+      soundEnabled: true,
+      musicEnabled: true
     };
+
+    // ============================================
+    // AUDIO SYSTEM - Web Audio API
+    // ============================================
+    let audioCtx = null;
+    let musicGain = null;
+    let sfxGain = null;
+    let musicOscillators = [];
+    let engineOsc = null;
+    let engineGain = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Master gains
+        musicGain = audioCtx.createGain();
+        musicGain.gain.value = 0.3;
+        musicGain.connect(audioCtx.destination);
+
+        sfxGain = audioCtx.createGain();
+        sfxGain.gain.value = 0.5;
+        sfxGain.connect(audioCtx.destination);
+
+        // Resume audio context (required for iOS)
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        console.log('Audio not supported');
+      }
+    }
+
+    // Play a tone
+    function playTone(freq, duration, type = 'square', volume = 0.3, delay = 0) {
+      if (!audioCtx || !gameState.soundEnabled) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + delay + 0.01);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + delay + duration);
+
+      osc.connect(gain);
+      gain.connect(sfxGain);
+
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + duration + 0.1);
+    }
+
+    // Sound Effects
+    function playCoinSound() {
+      playTone(880, 0.1, 'square', 0.3);
+      playTone(1100, 0.1, 'square', 0.3, 0.08);
+      playTone(1320, 0.15, 'square', 0.3, 0.16);
+    }
+
+    function playFlipSound() {
+      playTone(440, 0.1, 'sawtooth', 0.3);
+      playTone(660, 0.1, 'sawtooth', 0.3, 0.05);
+      playTone(880, 0.15, 'sawtooth', 0.4, 0.1);
+      playTone(1100, 0.2, 'sawtooth', 0.3, 0.15);
+    }
+
+    function playJumpSound() {
+      if (!audioCtx || !gameState.soundEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(sfxGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function playLandSound() {
+      playTone(100, 0.1, 'triangle', 0.4);
+      playTone(80, 0.15, 'triangle', 0.3, 0.05);
+    }
+
+    function playCrashSound() {
+      if (!audioCtx || !gameState.soundEnabled) return;
+      // Noise burst
+      const bufferSize = audioCtx.sampleRate * 0.3;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.5;
+      noise.connect(gain);
+      gain.connect(sfxGain);
+      noise.start();
+      // Low thud
+      playTone(60, 0.3, 'sine', 0.5);
+      playTone(40, 0.4, 'sine', 0.4, 0.1);
+    }
+
+    function playButtonSound() {
+      playTone(600, 0.08, 'square', 0.2);
+      playTone(800, 0.08, 'square', 0.2, 0.05);
+    }
+
+    // Engine sound
+    function startEngineSound() {
+      if (!audioCtx || !gameState.soundEnabled || engineOsc) return;
+
+      engineOsc = audioCtx.createOscillator();
+      engineGain = audioCtx.createGain();
+
+      engineOsc.type = 'sawtooth';
+      engineOsc.frequency.value = 80;
+      engineGain.gain.value = 0;
+
+      engineOsc.connect(engineGain);
+      engineGain.connect(sfxGain);
+      engineOsc.start();
+    }
+
+    function updateEngineSound(speed) {
+      if (!engineOsc || !engineGain) return;
+      const freq = 80 + speed * 8;
+      const vol = Math.min(speed / 20, 1) * 0.15;
+      engineOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+      engineGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
+    }
+
+    function stopEngineSound() {
+      if (engineGain) {
+        engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+      }
+    }
+
+    // Background Music - Synthwave style
+    let musicPlaying = false;
+    let musicInterval = null;
+
+    function startMusic() {
+      if (!audioCtx || !gameState.musicEnabled || musicPlaying) return;
+      musicPlaying = true;
+
+      // Bass line notes (in Hz)
+      const bassLine = [65, 65, 82, 82, 98, 98, 82, 82]; // C2, E2, G2 pattern
+      const melody = [262, 330, 392, 330, 294, 262, 294, 330]; // Simple melody
+      let beatIndex = 0;
+      const bpm = 120;
+      const beatDuration = 60 / bpm;
+
+      musicInterval = setInterval(() => {
+        if (!gameState.musicEnabled || gameState.isPaused) return;
+
+        // Bass
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.value = bassLine[beatIndex % bassLine.length];
+        bassGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        bassGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + beatDuration * 0.8);
+        bassOsc.connect(bassGain);
+        bassGain.connect(musicGain);
+        bassOsc.start();
+        bassOsc.stop(audioCtx.currentTime + beatDuration);
+
+        // Melody (every 2 beats)
+        if (beatIndex % 2 === 0) {
+          const melodyOsc = audioCtx.createOscillator();
+          const melodyGain = audioCtx.createGain();
+          melodyOsc.type = 'square';
+          melodyOsc.frequency.value = melody[(beatIndex / 2) % melody.length];
+          melodyGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          melodyGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + beatDuration * 1.5);
+          melodyOsc.connect(melodyGain);
+          melodyGain.connect(musicGain);
+          melodyOsc.start();
+          melodyOsc.stop(audioCtx.currentTime + beatDuration * 2);
+        }
+
+        // Hi-hat (every beat)
+        const hihatBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+        const hihatData = hihatBuffer.getChannelData(0);
+        for (let i = 0; i < hihatData.length; i++) {
+          hihatData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / hihatData.length, 3);
+        }
+        const hihat = audioCtx.createBufferSource();
+        hihat.buffer = hihatBuffer;
+        const hihatGain = audioCtx.createGain();
+        hihatGain.gain.value = 0.08;
+        hihat.connect(hihatGain);
+        hihatGain.connect(musicGain);
+        hihat.start();
+
+        beatIndex++;
+      }, beatDuration * 1000);
+    }
+
+    function stopMusic() {
+      musicPlaying = false;
+      if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+      }
+    }
 
     // Car Definitions (ALL FREE!)
     const cars = [
@@ -833,18 +1094,22 @@
     }
 
     function selectCar(index) {
+      playButtonSound();
       gameState.selectedCar = index;
       localStorage.setItem('lennySelectedCar', index);
       initGarage();
     }
 
     function openGarage() {
+      initAudio();
+      playButtonSound();
       document.getElementById('menu-screen').classList.add('hidden');
       document.getElementById('garage-screen').classList.add('active');
       initGarage();
     }
 
     function closeGarage() {
+      playButtonSound();
       document.getElementById('garage-screen').classList.remove('active');
       document.getElementById('menu-screen').classList.remove('hidden');
     }
@@ -1034,6 +1299,10 @@
 
     // Start game
     function startGame() {
+      // Initialize audio on first user interaction (required for iOS)
+      initAudio();
+      playButtonSound();
+
       document.getElementById('menu-screen').classList.add('hidden');
       document.getElementById('game-container').classList.add('active');
       document.getElementById('hud').classList.add('active');
@@ -1053,6 +1322,10 @@
 
       gameState.isPlaying = true;
       gameState.isPaused = false;
+
+      // Start audio
+      startMusic();
+      startEngineSound();
 
       gameLoop();
     }
@@ -1110,6 +1383,7 @@
           gameData.flips++;
           gameData.score += 50;
           showFlipIndicator();
+          playFlipSound();
         }
       } else {
         // On ground - straighten out quickly
@@ -1150,6 +1424,11 @@
           }
         }
 
+        // Play land sound if we were in the air
+        if (!car.isGrounded) {
+          playLandSound();
+        }
+
         car.y = groundY - car.height / 2;
         car.velocityY = -car.velocityY * 0.2; // Less bounce
         car.isGrounded = true;
@@ -1160,6 +1439,10 @@
           gameData.score += Math.floor(car.velocityX / 5);
         }
       } else {
+        // Just left ground - play jump sound
+        if (car.isGrounded && car.velocityY < -2) {
+          playJumpSound();
+        }
         car.isGrounded = false;
       }
       
@@ -1175,15 +1458,19 @@
           const dx = car.x - coin.x;
           const dy = car.y - coin.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          
+
           if (dist < 40) {
             coin.collected = true;
             gameData.coins++;
             gameData.score += 10;
+            playCoinSound();
           }
         }
       });
-      
+
+      // Update engine sound based on speed
+      updateEngineSound(car.velocityX);
+
       // Update camera
       cameraX = car.x - canvas.width / 3;
       
@@ -1376,7 +1663,12 @@
     function gameOver() {
       gameState.isPlaying = false;
       cancelAnimationFrame(animationId);
-      
+
+      // Play crash sound and stop engine/music
+      playCrashSound();
+      stopEngineSound();
+      stopMusic();
+
       // Update stats
       gameState.totalCoins += gameData.coins;
       localStorage.setItem('lennyCoins', gameState.totalCoins);
@@ -1412,6 +1704,7 @@
     }
 
     function retryGame() {
+      playButtonSound();
       document.getElementById('gameover-screen').classList.remove('active');
       document.getElementById('hud').classList.add('active');
       document.getElementById('pause-btn').classList.add('active');
@@ -1426,10 +1719,15 @@
       gameState.isPlaying = true;
       gameState.isPaused = false;
 
+      // Restart audio
+      startMusic();
+      startEngineSound();
+
       gameLoop();
     }
 
     function goToMenu() {
+      playButtonSound();
       document.getElementById('gameover-screen').classList.remove('active');
       document.getElementById('game-container').classList.remove('active');
       document.getElementById('menu-screen').classList.remove('hidden');
@@ -1437,17 +1735,59 @@
     }
 
     function togglePause() {
+      playButtonSound();
       gameState.isPaused = !gameState.isPaused;
     }
 
-    // Input handlers
+    function toggleSound() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      playButtonSound();
+      updateSoundButtons();
+    }
+
+    function toggleMusic() {
+      gameState.musicEnabled = !gameState.musicEnabled;
+      playButtonSound();
+      if (gameState.musicEnabled && gameState.isPlaying) {
+        startMusic();
+      } else {
+        stopMusic();
+      }
+      updateSoundButtons();
+    }
+
+    function updateSoundButtons() {
+      const soundBtn = document.getElementById('sound-btn');
+      const musicBtn = document.getElementById('music-btn');
+      if (soundBtn) soundBtn.textContent = gameState.soundEnabled ? '🔊' : '🔇';
+      if (musicBtn) musicBtn.textContent = gameState.musicEnabled ? '🎵' : '🎵❌';
+    }
+
+    // Input handlers - Fixed for iPad/iOS
     function handleInputStart(e) {
+      // Initialize audio on first touch (iOS requirement)
+      initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      // Don't prevent default on buttons
+      if (e.target.tagName === 'BUTTON') return;
+
       e.preventDefault();
+      e.stopPropagation();
       isHolding = true;
     }
 
     function handleInputEnd(e) {
+      if (e.target.tagName === 'BUTTON') return;
+
       e.preventDefault();
+      e.stopPropagation();
+      isHolding = false;
+    }
+
+    function handleInputCancel(e) {
       isHolding = false;
     }
 
@@ -1456,10 +1796,21 @@
       if (canvas) resizeCanvas();
     });
 
-    document.addEventListener('mousedown', handleInputStart);
-    document.addEventListener('mouseup', handleInputEnd);
-    document.addEventListener('touchstart', handleInputStart, { passive: false });
-    document.addEventListener('touchend', handleInputEnd, { passive: false });
+    // Mouse events
+    document.addEventListener('mousedown', handleInputStart, { passive: false });
+    document.addEventListener('mouseup', handleInputEnd, { passive: false });
+    document.addEventListener('mouseleave', handleInputCancel);
+
+    // Touch events - with proper options for iOS
+    document.addEventListener('touchstart', handleInputStart, { passive: false, capture: true });
+    document.addEventListener('touchend', handleInputEnd, { passive: false, capture: true });
+    document.addEventListener('touchcancel', handleInputCancel, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      if (gameState.isPlaying) e.preventDefault();
+    }, { passive: false });
+
+    // Prevent double-tap zoom on iOS
+    document.addEventListener('dblclick', (e) => e.preventDefault());
 
     // Keyboard support
     document.addEventListener('keydown', (e) => {
@@ -1474,6 +1825,9 @@
         isHolding = false;
       }
     });
+
+    // Prevent context menu on long press
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // Initialize
     updateMenuStats();
