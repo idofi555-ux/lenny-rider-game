@@ -333,6 +333,9 @@
       width: 100%;
       height: 100%;
       display: none;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
     }
 
     #game-container.active {
@@ -343,6 +346,18 @@
       width: 100%;
       height: 100%;
       display: block;
+    }
+
+    #touch-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
 
     /* HUD */
@@ -703,7 +718,8 @@
   <!-- GAME CONTAINER -->
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
-    <div class="touch-hint">Hold to accelerate • Release to flip</div>
+    <div id="touch-area"></div>
+    <div class="touch-hint">Hold anywhere to accelerate • Release to flip</div>
   </div>
 
   <!-- HUD -->
@@ -1763,71 +1779,100 @@
       if (musicBtn) musicBtn.textContent = gameState.musicEnabled ? '🎵' : '🎵❌';
     }
 
-    // Input handlers - Fixed for iPad/iOS
-    function handleInputStart(e) {
-      // Initialize audio on first touch (iOS requirement)
-      initAudio();
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    // ============================================
+    // INPUT HANDLING - iPad/iOS Compatible
+    // ============================================
+
+    function setupTouchControls() {
+      const touchArea = document.getElementById('touch-area');
+      const gameCanvas = document.getElementById('game-canvas');
+
+      // Touch events on the dedicated touch area
+      if (touchArea) {
+        touchArea.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          isHolding = true;
+        }, { passive: false });
+
+        touchArea.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          isHolding = false;
+        }, { passive: false });
+
+        touchArea.addEventListener('touchcancel', function(e) {
+          isHolding = false;
+        }, { passive: false });
+
+        touchArea.addEventListener('touchmove', function(e) {
+          e.preventDefault();
+        }, { passive: false });
       }
 
-      // Don't prevent default on buttons
-      if (e.target.tagName === 'BUTTON') return;
+      // Also add to canvas as backup
+      if (gameCanvas) {
+        gameCanvas.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          isHolding = true;
+        }, { passive: false });
 
-      e.preventDefault();
-      e.stopPropagation();
-      isHolding = true;
+        gameCanvas.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          isHolding = false;
+        }, { passive: false });
+      }
+
+      // Mouse events for desktop
+      document.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        if (gameState.isPlaying) {
+          initAudio();
+          isHolding = true;
+        }
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        isHolding = false;
+      });
+
+      // Keyboard support
+      document.addEventListener('keydown', function(e) {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+          e.preventDefault();
+          isHolding = true;
+        }
+      });
+
+      document.addEventListener('keyup', function(e) {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+          isHolding = false;
+        }
+      });
     }
 
-    function handleInputEnd(e) {
-      if (e.target.tagName === 'BUTTON') return;
-
-      e.preventDefault();
-      e.stopPropagation();
-      isHolding = false;
-    }
-
-    function handleInputCancel(e) {
-      isHolding = false;
-    }
-
-    // Event listeners
-    window.addEventListener('resize', () => {
+    // Window resize
+    window.addEventListener('resize', function() {
       if (canvas) resizeCanvas();
     });
 
-    // Mouse events
-    document.addEventListener('mousedown', handleInputStart, { passive: false });
-    document.addEventListener('mouseup', handleInputEnd, { passive: false });
-    document.addEventListener('mouseleave', handleInputCancel);
+    // Prevent zoom and scroll on iOS
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function(e) { e.preventDefault(); });
 
-    // Touch events - with proper options for iOS
-    document.addEventListener('touchstart', handleInputStart, { passive: false, capture: true });
-    document.addEventListener('touchend', handleInputEnd, { passive: false, capture: true });
-    document.addEventListener('touchcancel', handleInputCancel, { passive: false });
-    document.addEventListener('touchmove', (e) => {
-      if (gameState.isPlaying) e.preventDefault();
-    }, { passive: false });
+    // Initialize touch controls when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupTouchControls);
+    } else {
+      setupTouchControls();
+    }
 
-    // Prevent double-tap zoom on iOS
-    document.addEventListener('dblclick', (e) => e.preventDefault());
-
-    // Keyboard support
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        isHolding = true;
-      }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        isHolding = false;
-      }
-    });
-
-    // Prevent context menu on long press
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Prevent double-tap zoom and context menu on iOS
+    document.addEventListener('dblclick', function(e) { e.preventDefault(); });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
     // Initialize
     updateMenuStats();
