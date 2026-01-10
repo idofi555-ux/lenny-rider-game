@@ -1455,22 +1455,7 @@
       const carBottom = car.y + car.height / 2;
       
       if (carBottom >= groundY) {
-        // Normalize rotation to 0-2PI range
-        let normalizedRotation = car.rotation % (Math.PI * 2);
-        if (normalizedRotation < 0) normalizedRotation += Math.PI * 2;
-
-        // Check if landing is too steep (crash) - more forgiving!
-        // Only crash if car is nearly upside down (between 100 and 260 degrees)
-        const crashZoneStart = Math.PI * 0.55; // ~100 degrees
-        const crashZoneEnd = Math.PI * 1.45;   // ~260 degrees
-
-        if (normalizedRotation > crashZoneStart && normalizedRotation < crashZoneEnd) {
-          // Crashed! But give a small grace period at start
-          if (gameData.score > 5 || car.x > 300) {
-            gameOver();
-            return;
-          }
-        }
+        // NO CRASHING! Always land safely and keep playing!
 
         // Play land sound if we were in the air
         if (!car.isGrounded) {
@@ -1478,9 +1463,9 @@
         }
 
         car.y = groundY - car.height / 2;
-        car.velocityY = -car.velocityY * 0.2; // Less bounce
+        car.velocityY = -car.velocityY * 0.2; // Small bounce
         car.isGrounded = true;
-        car.rotation *= 0.7; // Quickly straighten on landing
+        car.rotation = 0; // Always straighten immediately on landing
 
         // Add score for distance
         if (car.velocityX > 1) {
@@ -1494,10 +1479,11 @@
         car.isGrounded = false;
       }
       
-      // Check for falling off screen
+      // If falling off screen, respawn on track (no game over!)
       if (car.y > canvas.height + 200) {
-        gameOver();
-        return;
+        car.y = canvas.height - 200;
+        car.velocityY = 0;
+        car.rotation = 0;
       }
       
       // Coin collection
