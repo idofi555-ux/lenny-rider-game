@@ -1840,7 +1840,17 @@
 
       // Keyboard support
       document.addEventListener('keydown', function(e) {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          // Jump when on ground!
+          if (gameState.isPlaying && car.isGrounded) {
+            car.velocityY = -12; // Jump force
+            car.isGrounded = false;
+            playJumpSound();
+          }
+          isHolding = true;
+        }
+        if (e.code === 'ArrowUp') {
           e.preventDefault();
           isHolding = true;
         }
