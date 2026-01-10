@@ -39,8 +39,7 @@
       font-family: 'Rajdhani', sans-serif;
       background: var(--dark-bg);
       color: white;
-      touch-action: none;
-      -webkit-touch-callout: none;
+      touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -333,9 +332,6 @@
       width: 100%;
       height: 100%;
       display: none;
-      touch-action: none;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
     }
 
     #game-container.active {
@@ -346,6 +342,7 @@
       width: 100%;
       height: 100%;
       display: block;
+      touch-action: none;
     }
 
     #touch-area {
@@ -355,8 +352,6 @@
       width: 100%;
       height: 100%;
       z-index: 10;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
       touch-action: none;
     }
 
@@ -726,18 +721,18 @@
     </div>
 
     <div class="menu-buttons">
-      <button class="menu-btn play" onclick="startGame()">
+      <button class="menu-btn play" ontouchend="startGame(); event.preventDefault();" onclick="startGame()">
         ▶ Play
       </button>
-      <button class="menu-btn garage" onclick="openGarage()">
+      <button class="menu-btn garage" ontouchend="openGarage(); event.preventDefault();" onclick="openGarage()">
         🚗 Garage
         <span class="free-badge">FREE!</span>
       </button>
     </div>
 
     <div class="sound-controls">
-      <button class="sound-btn" id="sound-btn" onclick="toggleSound()">🔊</button>
-      <button class="sound-btn" id="music-btn" onclick="toggleMusic()">🎵</button>
+      <button class="sound-btn" id="sound-btn" ontouchend="toggleSound(); event.preventDefault();" onclick="toggleSound()">🔊</button>
+      <button class="sound-btn" id="music-btn" ontouchend="toggleMusic(); event.preventDefault();" onclick="toggleMusic()">🎵</button>
     </div>
   </div>
 
@@ -745,7 +740,7 @@
   <div id="garage-screen">
     <h2 class="garage-title">🚗 FREE GARAGE 🚗</h2>
     <div class="cars-grid" id="cars-grid"></div>
-    <button class="back-btn" onclick="closeGarage()">← Back</button>
+    <button class="back-btn" ontouchend="closeGarage(); event.preventDefault();" onclick="closeGarage()">← Back</button>
   </div>
 
   <!-- GAME CONTAINER -->
@@ -779,13 +774,13 @@
   </div>
 
   <!-- PAUSE BUTTON -->
-  <div id="pause-btn" onclick="togglePause()">
+  <div id="pause-btn" ontouchend="togglePause(); event.preventDefault();" onclick="togglePause()">
     <span></span>
     <span></span>
   </div>
 
   <!-- JUMP BUTTON (for touch devices) -->
-  <button id="jump-btn" class="game-btn">JUMP</button>
+  <button id="jump-btn" class="game-btn" ontouchend="doJump(); event.preventDefault();" onclick="doJump()">JUMP</button>
 
   <!-- FLIP INDICATOR -->
   <div id="flip-indicator">FLIP!</div>
@@ -809,8 +804,8 @@
     </div>
     <div class="challenge-result incomplete" id="challenge-result">Challenge: Not Complete</div>
     <div class="gameover-buttons">
-      <button class="gameover-btn retry" onclick="retryGame()">↻ Retry</button>
-      <button class="gameover-btn menu" onclick="goToMenu()">☰ Menu</button>
+      <button class="gameover-btn retry" ontouchend="retryGame(); event.preventDefault();" onclick="retryGame()">↻ Retry</button>
+      <button class="gameover-btn menu" ontouchend="goToMenu(); event.preventDefault();" onclick="goToMenu()">☰ Menu</button>
     </div>
   </div>
 
@@ -1931,45 +1926,12 @@
       if (canvas) resizeCanvas();
     });
 
-    // Prevent zoom and scroll on iOS
-    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-    document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
-    document.addEventListener('gestureend', function(e) { e.preventDefault(); });
-
     // Initialize touch controls when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', setupTouchControls);
     } else {
       setupTouchControls();
     }
-
-    // Make all buttons work on touch (iPad fix)
-    function setupButtonTouchHandlers() {
-      // Get all buttons
-      const allButtons = document.querySelectorAll('button, .menu-btn, .back-btn, .gameover-btn, .sound-btn');
-
-      allButtons.forEach(function(btn) {
-        btn.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          // Initialize audio on any button press
-          initAudio();
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          // Trigger click
-          this.click();
-        }, { passive: false });
-      });
-    }
-
-    // Run button setup
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setupButtonTouchHandlers);
-    } else {
-      setupButtonTouchHandlers();
-    }
-
-    // Prevent double-tap zoom and context menu on iOS
-    document.addEventListener('dblclick', function(e) { e.preventDefault(); });
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
     // Initialize
     updateMenuStats();
