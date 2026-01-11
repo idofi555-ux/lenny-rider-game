@@ -500,7 +500,6 @@ var menuBtn = document.getElementById('menuBtn');
 
 var scoreNum = document.getElementById('scoreNum');
 var coinNum = document.getElementById('coinNum');
-var speedNum = document.getElementById('speedNum');
 var finalScore = document.getElementById('finalScore');
 
 // Game state
@@ -990,7 +989,6 @@ function loop() {
   // Update HUD
   scoreNum.textContent = score;
   coinNum.textContent = coinsCollected;
-  speedNum.textContent = Math.floor(speed * 10);
 
   // Check game over (fell off screen)
   if (car.y > canvas.height + 200) {
