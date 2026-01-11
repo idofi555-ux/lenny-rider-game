@@ -149,6 +149,25 @@
       box-shadow: 0 0 20px rgba(0,255,136,0.6);
     }
 
+    #endRun {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid #ff0066;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(180deg, #ff0066 0%, #cc0044 100%);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(255,0,102,0.6);
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      z-index: 1000;
+      pointer-events: auto;
+    }
+
     #hud {
       position: fixed;
       top: 0;
@@ -372,18 +391,18 @@
 <div id="hud">
   <div class="hud-item hud-score">SCORE: <span id="scoreNum">0</span></div>
   <div class="hud-item hud-coins">COINS: <span id="coinNum">0</span></div>
-  <div class="hud-item hud-lives" id="livesDisplay">❤️❤️❤️</div>
 </div>
 
 <div id="powerupDisplay"></div>
 
 <div id="controls">
   <button id="boost">BOOST</button>
+  <button id="endRun">END</button>
   <button id="jump">JUMP</button>
 </div>
 
 <div id="gameOver">
-  <div class="game-over-title">GAME OVER</div>
+  <div class="game-over-title">RUN COMPLETE!</div>
   <div class="final-score">Score: <span id="finalScore">0</span></div>
   <div id="highscoreMessage" class="new-highscore" style="display:none;">NEW HIGH SCORE!</div>
   <div class="name-input-container">
@@ -705,6 +724,7 @@ var garageBtn = document.getElementById('garageBtn');
 var leaderboardBtn = document.getElementById('leaderboardBtn');
 var boostBtn = document.getElementById('boost');
 var jumpBtn = document.getElementById('jump');
+var endRunBtn = document.getElementById('endRun');
 var retryBtn = document.getElementById('retryBtn');
 var menuBtn = document.getElementById('menuBtn');
 var submitScoreBtn = document.getElementById('submitScoreBtn');
@@ -750,9 +770,7 @@ var mountains = [];
 var obstacles = [];
 var powerups = [];
 
-// Lives and power-up state
-var lives = 3;
-var invincibleTime = 0;
+// Power-up state
 var activeEffects = {
   shield: 0,
   magnet: 0,
@@ -765,7 +783,6 @@ var boosting = false;
 var jumpPressed = false;
 
 // DOM elements for power-ups
-var livesDisplay = document.getElementById('livesDisplay');
 var powerupDisplay = document.getElementById('powerupDisplay');
 
 // Selected car (for garage) - 12 awesome cars!
@@ -960,27 +977,6 @@ function activatePowerup(type) {
   }
 }
 
-function handleObstacleHit() {
-  if (activeEffects.shield > 0) {
-    // Shield absorbs hit
-    activeEffects.shield = 0;
-    spawnParticle(car.x, car.y, 'shield');
-    playShieldBreakSound();
-    invincibleTime = 1; // 1 second invincibility after shield break
-  } else {
-    // Take damage
-    lives--;
-    updateLivesDisplay();
-    spawnParticle(car.x, car.y, 'hit');
-    playHitSound();
-    invincibleTime = 2; // 2 seconds invincibility after hit
-
-    if (lives <= 0) {
-      endGame();
-    }
-  }
-}
-
 function startGame() {
   initAudio();
   playClickSound();
@@ -1019,21 +1015,11 @@ function startGame() {
   gameOver = false;
   boosting = false;
 
-  // Reset lives and power-ups
-  lives = 3;
-  invincibleTime = 0;
+  // Reset power-ups
   activeEffects = { shield: 0, magnet: 0, doubleCoins: 0, superJump: 0 };
-  updateLivesDisplay();
   updatePowerupDisplay();
 
   loop();
-}
-
-function updateLivesDisplay() {
-  var hearts = '';
-  for (var i = 0; i < lives; i++) hearts += '❤️';
-  for (var i = lives; i < 3; i++) hearts += '🖤';
-  livesDisplay.textContent = hearts;
 }
 
 function updatePowerupDisplay() {
@@ -1181,20 +1167,7 @@ function loop() {
     }
   }
 
-  // Check obstacle collision
-  if (invincibleTime <= 0) {
-    for (var i = 0; i < obstacles.length; i++) {
-      var o = obstacles[i];
-      if (!o.hit && o.x > car.x - 100 && o.x < car.x + 100) {
-        var hitBox = getObstacleHitBox(o);
-        if (car.x + 30 > hitBox.x && car.x - 30 < hitBox.x + hitBox.w &&
-            car.y + 15 > hitBox.y && car.y - 20 < hitBox.y + hitBox.h) {
-          o.hit = true;
-          handleObstacleHit();
-        }
-      }
-    }
-  }
+  // Obstacles are now just visual - no collision damage
 
   // Update power-up timers
   var dt = 0.016;
@@ -1202,7 +1175,6 @@ function loop() {
   if (activeEffects.magnet > 0) activeEffects.magnet -= dt;
   if (activeEffects.doubleCoins > 0) activeEffects.doubleCoins -= dt;
   if (activeEffects.superJump > 0) activeEffects.superJump -= dt;
-  if (invincibleTime > 0) invincibleTime -= dt;
   updatePowerupDisplay();
 
   // Update particles
@@ -1224,10 +1196,11 @@ function loop() {
   scoreNum.textContent = score;
   coinNum.textContent = coinsCollected;
 
-  // Check game over (fell off screen)
+  // Respawn if fell off screen (no game over)
   if (car.y > canvas.height + 200) {
-    endGame();
-    return;
+    car.y = getGroundY(car.x) - 30;
+    car.vy = 0;
+    car.onGround = true;
   }
 
   // DRAW EVERYTHING
@@ -1504,11 +1477,6 @@ function draw() {
   ctx.translate(car.x, car.y);
   ctx.rotate(car.rotation);
 
-  // Invincibility blink effect
-  if (invincibleTime > 0 && Math.floor(time * 10) % 2 === 0) {
-    ctx.globalAlpha = 0.5;
-  }
-
   // Shield bubble effect
   if (activeEffects.shield > 0) {
     ctx.strokeStyle = '#00aaff';
@@ -1717,7 +1685,6 @@ function draw() {
     ctx.shadowBlur = 0;
   }
 
-  ctx.globalAlpha = 1; // Reset after potential invincibility blink
   ctx.restore();
   ctx.restore();
 }
@@ -1788,6 +1755,9 @@ addButtonEvent(submitScoreBtn, submitScore, false);
 
 // Game controls
 addButtonEvent(jumpBtn, jump, false);
+addButtonEvent(endRunBtn, function() {
+  if (playing) endGame();
+}, false);
 addButtonEvent(boostBtn, function(down) {
   boosting = down;
   if (down) {
