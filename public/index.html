@@ -432,14 +432,39 @@ var audioCtx = null;
 var musicPlaying = false;
 var boostSound = null;
 var musicGain = null;
+var audioUnlocked = false;
 
 function initAudio() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx && audioUnlocked) return;
+
+  // Create audio context if needed
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // Resume if suspended (iOS requirement)
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+
+  // Play silent buffer to unlock audio on iOS
+  if (!audioUnlocked) {
+    var buffer = audioCtx.createBuffer(1, 1, 22050);
+    var source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+    audioUnlocked = true;
+  }
 }
+
+// Unlock audio on any touch (for iOS/iPad)
+document.addEventListener('touchstart', function() {
+  initAudio();
+}, { once: false });
+document.addEventListener('touchend', function() {
+  initAudio();
+}, { once: false });
 
 // Play a simple tone
 function playTone(freq, duration, type, volume, delay) {
@@ -530,6 +555,15 @@ function playPowerupSound() {
   playTone(659, 0.1, 'sine', 0.25, 0.08);
   playTone(784, 0.1, 'sine', 0.25, 0.16);
   playTone(1047, 0.2, 'sine', 0.3, 0.24);
+}
+
+// Flip sound - whooshing spin
+function playFlipSound() {
+  if (!audioCtx) return;
+  playTone(200, 0.1, 'sine', 0.2, 0);
+  playTone(300, 0.1, 'sine', 0.25, 0.1);
+  playTone(400, 0.1, 'sine', 0.3, 0.2);
+  playTone(500, 0.15, 'sine', 0.25, 0.3);
 }
 
 // Background music - synthwave style
@@ -781,6 +815,12 @@ var activeEffects = {
 var boosting = false;
 var jumpPressed = false;
 
+// Flip mechanics
+var lastJumpTime = 0;
+var isFlipping = false;
+var flipRotation = 0;
+var flipSpeed = 0.35; // Radians per frame
+
 // DOM elements for power-ups
 var powerupDisplay = document.getElementById('powerupDisplay');
 
@@ -980,6 +1020,11 @@ function startGame() {
   car.color = carColors[selectedCar].main;
   car.accentColor = carColors[selectedCar].accent;
 
+  // Reset flip state
+  isFlipping = false;
+  flipRotation = 0;
+  lastJumpTime = 0;
+
   speed = 8;
   score = 0;
   coinsCollected = 0;
@@ -1046,12 +1091,29 @@ function returnToMenu() {
 }
 
 function jump() {
+  var now = Date.now();
+  var timeSinceLastJump = now - lastJumpTime;
+
+  // Double tap while in air = flip!
+  if (!car.onGround && playing && timeSinceLastJump < 400 && !isFlipping) {
+    isFlipping = true;
+    flipRotation = 0;
+    playFlipSound();
+    spawnParticle(car.x, car.y, 'powerup');
+    // Give a small upward boost for the flip
+    car.vy = Math.min(car.vy, -8);
+    lastJumpTime = 0; // Reset to prevent triple flip
+    return;
+  }
+
+  // Normal jump from ground
   if (car.onGround && playing) {
     // Super jump power-up gives higher jump
     car.vy = activeEffects.superJump > 0 ? -25 : -18;
     car.onGround = false;
     spawnParticle(car.x, car.y + 20, 'jump');
     playJumpSound();
+    lastJumpTime = now;
   }
 }
 
@@ -1087,6 +1149,7 @@ function loop() {
     car.vy = 0;
     car.onGround = true;
     car.rotation = groundAngle;
+    isFlipping = false; // Reset flip on landing
 
     // Speed particles when on ground
     if (speed > 15 && Math.random() < 0.3) {
@@ -1094,8 +1157,22 @@ function loop() {
     }
   } else {
     car.onGround = false;
-    // Rotate in air
-    car.rotation += 0.03;
+    // Handle flip or normal air rotation
+    if (isFlipping) {
+      flipRotation += flipSpeed;
+      car.rotation += flipSpeed;
+      // Complete flip after full 360 degrees (2*PI)
+      if (flipRotation >= Math.PI * 2) {
+        isFlipping = false;
+        flipRotation = 0;
+        // Bonus points for flip!
+        score += 100;
+        spawnParticle(car.x, car.y - 30, 'coin');
+      }
+    } else {
+      // Normal slight rotation in air
+      car.rotation += 0.03;
+    }
   }
 
   // Camera follow
