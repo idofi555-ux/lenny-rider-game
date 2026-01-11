@@ -767,7 +767,6 @@ var particles = [];
 var stars = [];
 var cityBuildings = [];
 var mountains = [];
-var obstacles = [];
 var powerups = [];
 
 // Power-up state
@@ -852,7 +851,6 @@ function generateMountains() {
 function generateTrack() {
   track = [];
   coins = [];
-  obstacles = [];
   powerups = [];
   var x = -200;
   var y = 450;
@@ -876,19 +874,7 @@ function generateTrack() {
       });
     }
 
-    // Add obstacles (start after position 30 to give player time)
-    if (i > 30 && Math.random() < 0.06) {
-      var obstacleTypes = ['rock', 'spike', 'barrier'];
-      var type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
-      obstacles.push({
-        x: x,
-        y: y,
-        type: type,
-        hit: false
-      });
-    }
-
-    // Add power-ups (rarer than obstacles)
+    // Add power-ups
     if (i > 25 && Math.random() < 0.025) {
       var powerupTypes = ['shield', 'magnet', 'doubleCoins', 'superJump'];
       var ptype = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
@@ -952,17 +938,6 @@ function spawnParticle(x, y, type) {
       color: color
     });
   }
-}
-
-function getObstacleHitBox(o) {
-  if (o.type === 'rock') {
-    return { x: o.x - 25, y: o.y - 35, w: 50, h: 35 };
-  } else if (o.type === 'spike') {
-    return { x: o.x - 15, y: o.y - 40, w: 30, h: 40 };
-  } else if (o.type === 'barrier') {
-    return { x: o.x - 20, y: o.y - 60, w: 40, h: 60 };
-  }
-  return { x: o.x - 20, y: o.y - 30, w: 40, h: 30 };
 }
 
 function activatePowerup(type) {
@@ -1167,8 +1142,6 @@ function loop() {
     }
   }
 
-  // Obstacles are now just visual - no collision damage
-
   // Update power-up timers
   var dt = 0.016;
   if (activeEffects.shield > 0) activeEffects.shield -= dt;
@@ -1354,57 +1327,6 @@ function draw() {
       ctx.fill();
 
       ctx.shadowBlur = 0;
-    }
-  }
-
-  // Draw obstacles
-  for (var i = 0; i < obstacles.length; i++) {
-    var o = obstacles[i];
-    if (!o.hit && o.x > cameraX - 100 && o.x < cameraX + w + 100) {
-      ctx.shadowBlur = 0;
-
-      if (o.type === 'rock') {
-        // Gray rock
-        ctx.fillStyle = '#555555';
-        ctx.beginPath();
-        ctx.moveTo(o.x - 25, o.y);
-        ctx.lineTo(o.x - 20, o.y - 25);
-        ctx.lineTo(o.x - 5, o.y - 35);
-        ctx.lineTo(o.x + 10, o.y - 30);
-        ctx.lineTo(o.x + 25, o.y - 15);
-        ctx.lineTo(o.x + 20, o.y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      } else if (o.type === 'spike') {
-        // Red spikes
-        ctx.fillStyle = '#ff3333';
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 10;
-        for (var s = 0; s < 3; s++) {
-          ctx.beginPath();
-          ctx.moveTo(o.x - 15 + s * 15, o.y);
-          ctx.lineTo(o.x - 7 + s * 15, o.y - 40);
-          ctx.lineTo(o.x + s * 15, o.y);
-          ctx.closePath();
-          ctx.fill();
-        }
-        ctx.shadowBlur = 0;
-      } else if (o.type === 'barrier') {
-        // Orange barrier
-        ctx.fillStyle = '#ff6600';
-        ctx.shadowColor = '#ff6600';
-        ctx.shadowBlur = 10;
-        ctx.fillRect(o.x - 20, o.y - 60, 40, 60);
-        ctx.fillStyle = '#ffff00';
-        // Warning stripes
-        for (var stripe = 0; stripe < 4; stripe++) {
-          ctx.fillRect(o.x - 15, o.y - 55 + stripe * 15, 30, 5);
-        }
-        ctx.shadowBlur = 0;
-      }
     }
   }
 
