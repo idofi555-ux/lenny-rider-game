@@ -14,6 +14,10 @@
       overflow: hidden;
       height: 100vh;
       width: 100vw;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     #menu {
@@ -46,6 +50,10 @@
       margin: 15px;
       cursor: pointer;
       -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .btn:active {
@@ -82,6 +90,11 @@
       display: none;
       cursor: pointer;
       -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      z-index: 1000;
     }
 
     #jump.active { display: block; }
@@ -285,26 +298,52 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// Event listeners
-playBtn.onclick = function() { startGame(); };
-garageBtn.onclick = function() { alert('All cars are FREE! Pick any color in the game!'); };
-jumpBtn.onclick = function() { jump(); };
+// Helper for mobile-friendly button events
+function addButtonEvent(btn, callback) {
+  var handled = false;
+  btn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handled = true;
+    callback();
+  }, { passive: false });
+  btn.addEventListener('click', function(e) {
+    if (!handled) {
+      callback();
+    }
+    handled = false;
+  });
+}
 
-// Touch events
-document.body.ontouchstart = function(e) {
-  if (playing && e.target !== jumpBtn) {
+// Event listeners
+addButtonEvent(playBtn, startGame);
+addButtonEvent(garageBtn, function() { alert('All cars are FREE! Pick any color in the game!'); });
+
+// Jump button - special handling
+jumpBtn.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  jump();
+}, { passive: false });
+jumpBtn.addEventListener('click', function(e) {
+  jump();
+});
+
+// Touch events for acceleration (not on jump button)
+document.body.addEventListener('touchstart', function(e) {
+  if (playing && e.target !== jumpBtn && e.target !== playBtn && e.target !== garageBtn) {
     holding = true;
   }
-};
-document.body.ontouchend = function() { holding = false; };
+}, { passive: true });
+document.body.addEventListener('touchend', function() { holding = false; }, { passive: true });
 
 // Mouse events
-document.body.onmousedown = function(e) {
+document.body.addEventListener('mousedown', function(e) {
   if (playing && e.target !== jumpBtn) {
     holding = true;
   }
-};
-document.body.onmouseup = function() { holding = false; };
+});
+document.body.addEventListener('mouseup', function() { holding = false; });
 
 // Keyboard
 document.onkeydown = function(e) {
