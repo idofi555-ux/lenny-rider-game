@@ -25,6 +25,6 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Lenny Rider v2 - Simple Version`);
+  console.log(`Lenny Rider v3 - With Obstacles & Power-ups`);
   console.log(`Running on port ${PORT}`);
 });
