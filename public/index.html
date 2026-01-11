@@ -238,6 +238,195 @@
 // LENNY'S RIDER - Ultimate Neon Racing Game
 // ===========================================
 
+// ============ AUDIO SYSTEM ============
+var audioCtx = null;
+var musicPlaying = false;
+var boostSound = null;
+var musicGain = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+// Play a simple tone
+function playTone(freq, duration, type, volume, delay) {
+  if (!audioCtx) return;
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  gain.gain.value = volume || 0.3;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  var startTime = audioCtx.currentTime + (delay || 0);
+  osc.start(startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.stop(startTime + duration + 0.1);
+}
+
+// Jump sound - rising whoosh
+function playJumpSound() {
+  if (!audioCtx) return;
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.25);
+}
+
+// Coin collect sound - happy bling
+function playCoinSound() {
+  if (!audioCtx) return;
+  playTone(880, 0.1, 'sine', 0.2, 0);
+  playTone(1100, 0.1, 'sine', 0.2, 0.05);
+  playTone(1320, 0.15, 'sine', 0.25, 0.1);
+}
+
+// Boost start sound
+function playBoostStartSound() {
+  if (!audioCtx) return;
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.2);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  boostSound = { osc: osc, gain: gain };
+}
+
+// Stop boost sound
+function stopBoostSound() {
+  if (boostSound) {
+    boostSound.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    boostSound.osc.stop(audioCtx.currentTime + 0.15);
+    boostSound = null;
+  }
+}
+
+// Game over sound - sad descending
+function playGameOverSound() {
+  if (!audioCtx) return;
+  playTone(440, 0.3, 'sine', 0.3, 0);
+  playTone(350, 0.3, 'sine', 0.25, 0.25);
+  playTone(280, 0.5, 'sine', 0.2, 0.5);
+}
+
+// Button click sound
+function playClickSound() {
+  if (!audioCtx) return;
+  playTone(600, 0.08, 'square', 0.15, 0);
+}
+
+// Background music - synthwave style
+var musicNotes = [];
+var musicIndex = 0;
+var musicInterval = null;
+
+function startMusic() {
+  if (!audioCtx || musicPlaying) return;
+  musicPlaying = true;
+
+  // Create master gain for music
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.15;
+  musicGain.connect(audioCtx.destination);
+
+  // Bass line pattern (notes in Hz)
+  var bassPattern = [110, 110, 146.83, 146.83, 130.81, 130.81, 164.81, 164.81];
+  // Melody pattern
+  var melodyPattern = [330, 392, 440, 392, 330, 294, 330, 392];
+  var beatIndex = 0;
+
+  musicInterval = setInterval(function() {
+    if (!musicPlaying || !audioCtx) {
+      clearInterval(musicInterval);
+      return;
+    }
+
+    // Bass note
+    var bassOsc = audioCtx.createOscillator();
+    var bassGain = audioCtx.createGain();
+    bassOsc.type = 'sawtooth';
+    bassOsc.frequency.value = bassPattern[beatIndex % bassPattern.length];
+    bassGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    bassOsc.connect(bassGain);
+    bassGain.connect(musicGain);
+    bassOsc.start();
+    bassOsc.stop(audioCtx.currentTime + 0.25);
+
+    // Melody note (every 2 beats)
+    if (beatIndex % 2 === 0) {
+      var melOsc = audioCtx.createOscillator();
+      var melGain = audioCtx.createGain();
+      melOsc.type = 'triangle';
+      melOsc.frequency.value = melodyPattern[(beatIndex / 2) % melodyPattern.length];
+      melGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      melGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      melOsc.connect(melGain);
+      melGain.connect(musicGain);
+      melOsc.start();
+      melOsc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    // Hi-hat sound (every beat)
+    var noise = audioCtx.createOscillator();
+    var noiseGain = audioCtx.createGain();
+    noise.type = 'square';
+    noise.frequency.value = 1000 + Math.random() * 500;
+    noiseGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    noise.connect(noiseGain);
+    noiseGain.connect(musicGain);
+    noise.start();
+    noise.stop(audioCtx.currentTime + 0.06);
+
+    // Kick drum (every 4 beats)
+    if (beatIndex % 4 === 0) {
+      var kick = audioCtx.createOscillator();
+      var kickGain = audioCtx.createGain();
+      kick.type = 'sine';
+      kick.frequency.setValueAtTime(150, audioCtx.currentTime);
+      kick.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+      kickGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      kickGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      kick.connect(kickGain);
+      kickGain.connect(musicGain);
+      kick.start();
+      kick.stop(audioCtx.currentTime + 0.2);
+    }
+
+    beatIndex++;
+  }, 180); // ~166 BPM
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+  if (boostSound) {
+    stopBoostSound();
+  }
+}
+
+// ============ END AUDIO SYSTEM ============
+
 var menu = document.getElementById('menu');
 var game = document.getElementById('game');
 var canvas = document.getElementById('canvas');
@@ -422,6 +611,9 @@ function spawnParticle(x, y, type) {
 }
 
 function startGame() {
+  initAudio();
+  playClickSound();
+
   menu.className = 'hidden';
   game.className = 'active';
   hud.className = 'active';
@@ -433,6 +625,9 @@ function startGame() {
   generateMountains();
   generateCity();
   generateTrack();
+
+  // Start background music
+  startMusic();
 
   car.x = 200;
   car.y = getGroundY(200) - 30;
@@ -461,9 +656,12 @@ function endGame() {
   gameOver = true;
   finalScore.textContent = score;
   gameOverScreen.className = 'active';
+  stopMusic();
+  playGameOverSound();
 }
 
 function returnToMenu() {
+  playClickSound();
   gameOverScreen.className = '';
   game.className = '';
   hud.className = '';
@@ -477,6 +675,7 @@ function jump() {
     car.vy = -18;
     car.onGround = false;
     spawnParticle(car.x, car.y + 20, 'jump');
+    playJumpSound();
   }
 }
 
@@ -537,6 +736,7 @@ function loop() {
         coinsCollected++;
         score += 50;
         spawnParticle(c.x, c.y, 'coin');
+        playCoinSound();
       }
     }
   }
@@ -937,6 +1137,8 @@ function addButtonEvent(btn, callback, isHold) {
 // Menu buttons
 addButtonEvent(playBtn, startGame, false);
 addButtonEvent(garageBtn, function() {
+  initAudio();
+  playClickSound();
   selectedCar = (selectedCar + 1) % carColors.length;
   alert('Selected: ' + carColors[selectedCar].name + '! All cars are FREE!');
 }, false);
@@ -945,6 +1147,11 @@ addButtonEvent(garageBtn, function() {
 addButtonEvent(jumpBtn, jump, false);
 addButtonEvent(boostBtn, function(down) {
   boosting = down;
+  if (down) {
+    playBoostStartSound();
+  } else {
+    stopBoostSound();
+  }
 }, true);
 
 // Game over buttons
@@ -958,13 +1165,17 @@ document.addEventListener('keydown', function(e) {
     jump();
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ArrowRight') {
-    boosting = true;
+    if (!boosting) {
+      boosting = true;
+      playBoostStartSound();
+    }
   }
 });
 
 document.addEventListener('keyup', function(e) {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ArrowRight') {
     boosting = false;
+    stopBoostSound();
   }
 });
 
