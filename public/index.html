@@ -172,7 +172,37 @@
 
     .hud-score { color: #00ffff; }
     .hud-coins { color: #ffcc00; }
-    .hud-speed { color: #ff00ff; }
+    .hud-lives { font-size: 22px; }
+
+    #powerupDisplay {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .powerup-indicator {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 10px currentColor;
+      animation: powerupPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes powerupPulse {
+      from { transform: scale(1); opacity: 0.8; }
+      to { transform: scale(1.05); opacity: 1; }
+    }
+
+    .powerup-shield { background: rgba(0, 150, 255, 0.8); }
+    .powerup-magnet { background: rgba(200, 0, 255, 0.8); }
+    .powerup-double { background: rgba(255, 200, 0, 0.8); color: #333; }
+    .powerup-superjump { background: rgba(0, 255, 100, 0.8); color: #333; }
 
     #gameOver {
       position: fixed;
@@ -218,8 +248,10 @@
 <div id="hud">
   <div class="hud-item hud-score">SCORE: <span id="scoreNum">0</span></div>
   <div class="hud-item hud-coins">COINS: <span id="coinNum">0</span></div>
-  <div class="hud-item hud-speed">SPEED: <span id="speedNum">0</span></div>
+  <div class="hud-item hud-lives" id="livesDisplay">❤️❤️❤️</div>
 </div>
+
+<div id="powerupDisplay"></div>
 
 <div id="controls">
   <button id="boost">BOOST</button>
@@ -329,6 +361,30 @@ function playGameOverSound() {
 function playClickSound() {
   if (!audioCtx) return;
   playTone(600, 0.08, 'square', 0.15, 0);
+}
+
+// Hit obstacle sound
+function playHitSound() {
+  if (!audioCtx) return;
+  playTone(100, 0.15, 'sawtooth', 0.4, 0);
+  playTone(80, 0.2, 'sawtooth', 0.3, 0.1);
+}
+
+// Shield break sound
+function playShieldBreakSound() {
+  if (!audioCtx) return;
+  playTone(800, 0.1, 'sine', 0.3, 0);
+  playTone(400, 0.15, 'sine', 0.2, 0.08);
+  playTone(200, 0.2, 'sine', 0.15, 0.15);
+}
+
+// Power-up collect sound
+function playPowerupSound() {
+  if (!audioCtx) return;
+  playTone(523, 0.1, 'sine', 0.25, 0);
+  playTone(659, 0.1, 'sine', 0.25, 0.08);
+  playTone(784, 0.1, 'sine', 0.25, 0.16);
+  playTone(1047, 0.2, 'sine', 0.3, 0.24);
 }
 
 // Background music - synthwave style
@@ -476,10 +532,26 @@ var particles = [];
 var stars = [];
 var cityBuildings = [];
 var mountains = [];
+var obstacles = [];
+var powerups = [];
+
+// Lives and power-up state
+var lives = 3;
+var invincibleTime = 0;
+var activeEffects = {
+  shield: 0,
+  magnet: 0,
+  doubleCoins: 0,
+  superJump: 0
+};
 
 // Controls
 var boosting = false;
 var jumpPressed = false;
+
+// DOM elements for power-ups
+var livesDisplay = document.getElementById('livesDisplay');
+var powerupDisplay = document.getElementById('powerupDisplay');
 
 // Selected car (for garage)
 var carColors = [
@@ -542,6 +614,8 @@ function generateMountains() {
 function generateTrack() {
   track = [];
   coins = [];
+  obstacles = [];
+  powerups = [];
   var x = -200;
   var y = 450;
 
@@ -561,6 +635,31 @@ function generateTrack() {
         y: y - 80,
         collected: false,
         rotation: Math.random() * Math.PI * 2
+      });
+    }
+
+    // Add obstacles (start after position 30 to give player time)
+    if (i > 30 && Math.random() < 0.06) {
+      var obstacleTypes = ['rock', 'spike', 'barrier'];
+      var type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+      obstacles.push({
+        x: x,
+        y: y,
+        type: type,
+        hit: false
+      });
+    }
+
+    // Add power-ups (rarer than obstacles)
+    if (i > 25 && Math.random() < 0.025) {
+      var powerupTypes = ['shield', 'magnet', 'doubleCoins', 'superJump'];
+      var ptype = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+      powerups.push({
+        x: x,
+        y: y - 100,
+        type: ptype,
+        collected: false,
+        rotation: 0
       });
     }
 
@@ -595,18 +694,69 @@ function resize() {
 }
 
 function spawnParticle(x, y, type) {
-  var color = type === 'boost' ? '#ff6600' : type === 'coin' ? '#ffcc00' : '#00ffff';
-  for (var i = 0; i < (type === 'coin' ? 10 : 3); i++) {
+  var color = '#00ffff';
+  var count = 3;
+  if (type === 'boost') color = '#ff6600';
+  else if (type === 'coin') { color = '#ffcc00'; count = 10; }
+  else if (type === 'powerup') { color = '#ff00ff'; count = 15; }
+  else if (type === 'hit') { color = '#ff0000'; count = 20; }
+  else if (type === 'shield') { color = '#00aaff'; count = 25; }
+
+  for (var i = 0; i < count; i++) {
     particles.push({
       x: x,
       y: y,
-      vx: (Math.random() - 0.5) * (type === 'coin' ? 8 : 4),
+      vx: (Math.random() - 0.5) * (count > 5 ? 10 : 4),
       vy: -Math.random() * 5 - 2,
       life: 1,
       decay: 0.02 + Math.random() * 0.02,
-      size: type === 'coin' ? 4 + Math.random() * 4 : 2 + Math.random() * 3,
+      size: count > 5 ? 4 + Math.random() * 4 : 2 + Math.random() * 3,
       color: color
     });
+  }
+}
+
+function getObstacleHitBox(o) {
+  if (o.type === 'rock') {
+    return { x: o.x - 25, y: o.y - 35, w: 50, h: 35 };
+  } else if (o.type === 'spike') {
+    return { x: o.x - 15, y: o.y - 40, w: 30, h: 40 };
+  } else if (o.type === 'barrier') {
+    return { x: o.x - 20, y: o.y - 60, w: 40, h: 60 };
+  }
+  return { x: o.x - 20, y: o.y - 30, w: 40, h: 30 };
+}
+
+function activatePowerup(type) {
+  if (type === 'shield') {
+    activeEffects.shield = 10; // 10 seconds
+  } else if (type === 'magnet') {
+    activeEffects.magnet = 8; // 8 seconds
+  } else if (type === 'doubleCoins') {
+    activeEffects.doubleCoins = 10; // 10 seconds
+  } else if (type === 'superJump') {
+    activeEffects.superJump = 8; // 8 seconds
+  }
+}
+
+function handleObstacleHit() {
+  if (activeEffects.shield > 0) {
+    // Shield absorbs hit
+    activeEffects.shield = 0;
+    spawnParticle(car.x, car.y, 'shield');
+    playShieldBreakSound();
+    invincibleTime = 1; // 1 second invincibility after shield break
+  } else {
+    // Take damage
+    lives--;
+    updateLivesDisplay();
+    spawnParticle(car.x, car.y, 'hit');
+    playHitSound();
+    invincibleTime = 2; // 2 seconds invincibility after hit
+
+    if (lives <= 0) {
+      endGame();
+    }
   }
 }
 
@@ -648,7 +798,38 @@ function startGame() {
   gameOver = false;
   boosting = false;
 
+  // Reset lives and power-ups
+  lives = 3;
+  invincibleTime = 0;
+  activeEffects = { shield: 0, magnet: 0, doubleCoins: 0, superJump: 0 };
+  updateLivesDisplay();
+  updatePowerupDisplay();
+
   loop();
+}
+
+function updateLivesDisplay() {
+  var hearts = '';
+  for (var i = 0; i < lives; i++) hearts += '❤️';
+  for (var i = lives; i < 3; i++) hearts += '🖤';
+  livesDisplay.textContent = hearts;
+}
+
+function updatePowerupDisplay() {
+  var html = '';
+  if (activeEffects.shield > 0) {
+    html += '<div class="powerup-indicator powerup-shield">🛡️ ' + Math.ceil(activeEffects.shield) + 's</div>';
+  }
+  if (activeEffects.magnet > 0) {
+    html += '<div class="powerup-indicator powerup-magnet">🧲 ' + Math.ceil(activeEffects.magnet) + 's</div>';
+  }
+  if (activeEffects.doubleCoins > 0) {
+    html += '<div class="powerup-indicator powerup-double">2️⃣ ' + Math.ceil(activeEffects.doubleCoins) + 's</div>';
+  }
+  if (activeEffects.superJump > 0) {
+    html += '<div class="powerup-indicator powerup-superjump">⬆️ ' + Math.ceil(activeEffects.superJump) + 's</div>';
+  }
+  powerupDisplay.innerHTML = html;
 }
 
 function endGame() {
@@ -672,7 +853,8 @@ function returnToMenu() {
 
 function jump() {
   if (car.onGround && playing) {
-    car.vy = -18;
+    // Super jump power-up gives higher jump
+    car.vy = activeEffects.superJump > 0 ? -25 : -18;
     car.onGround = false;
     spawnParticle(car.x, car.y + 20, 'jump');
     playJumpSound();
@@ -725,21 +907,70 @@ function loop() {
   // Camera follow
   cameraX = car.x - canvas.width * 0.25;
 
-  // Collect coins
+  // Collect coins (with magnet effect)
+  var magnetRange = activeEffects.magnet > 0 ? 200 : 50;
   for (var i = 0; i < coins.length; i++) {
     var c = coins[i];
     if (!c.collected) {
       var dx = car.x - c.x;
       var dy = car.y - c.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 50) {
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Magnet pulls coins toward car
+      if (activeEffects.magnet > 0 && dist < magnetRange && dist > 50) {
+        c.x += dx * 0.1;
+        c.y += dy * 0.1;
+      }
+
+      if (dist < 50) {
         c.collected = true;
+        var coinValue = activeEffects.doubleCoins > 0 ? 100 : 50;
         coinsCollected++;
-        score += 50;
+        score += coinValue;
         spawnParticle(c.x, c.y, 'coin');
         playCoinSound();
       }
     }
   }
+
+  // Collect power-ups
+  for (var i = 0; i < powerups.length; i++) {
+    var p = powerups[i];
+    if (!p.collected) {
+      var dx = car.x - p.x;
+      var dy = car.y - p.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 50) {
+        p.collected = true;
+        activatePowerup(p.type);
+        spawnParticle(p.x, p.y, 'powerup');
+        playPowerupSound();
+      }
+    }
+  }
+
+  // Check obstacle collision
+  if (invincibleTime <= 0) {
+    for (var i = 0; i < obstacles.length; i++) {
+      var o = obstacles[i];
+      if (!o.hit && o.x > car.x - 100 && o.x < car.x + 100) {
+        var hitBox = getObstacleHitBox(o);
+        if (car.x + 30 > hitBox.x && car.x - 30 < hitBox.x + hitBox.w &&
+            car.y + 15 > hitBox.y && car.y - 20 < hitBox.y + hitBox.h) {
+          o.hit = true;
+          handleObstacleHit();
+        }
+      }
+    }
+  }
+
+  // Update power-up timers
+  var dt = 0.016;
+  if (activeEffects.shield > 0) activeEffects.shield -= dt;
+  if (activeEffects.magnet > 0) activeEffects.magnet -= dt;
+  if (activeEffects.doubleCoins > 0) activeEffects.doubleCoins -= dt;
+  if (activeEffects.superJump > 0) activeEffects.superJump -= dt;
+  if (invincibleTime > 0) invincibleTime -= dt;
+  updatePowerupDisplay();
 
   // Update particles
   for (var i = particles.length - 1; i >= 0; i--) {
@@ -921,6 +1152,107 @@ function draw() {
     }
   }
 
+  // Draw obstacles
+  for (var i = 0; i < obstacles.length; i++) {
+    var o = obstacles[i];
+    if (!o.hit && o.x > cameraX - 100 && o.x < cameraX + w + 100) {
+      ctx.shadowBlur = 0;
+
+      if (o.type === 'rock') {
+        // Gray rock
+        ctx.fillStyle = '#555555';
+        ctx.beginPath();
+        ctx.moveTo(o.x - 25, o.y);
+        ctx.lineTo(o.x - 20, o.y - 25);
+        ctx.lineTo(o.x - 5, o.y - 35);
+        ctx.lineTo(o.x + 10, o.y - 30);
+        ctx.lineTo(o.x + 25, o.y - 15);
+        ctx.lineTo(o.x + 20, o.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else if (o.type === 'spike') {
+        // Red spikes
+        ctx.fillStyle = '#ff3333';
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 10;
+        for (var s = 0; s < 3; s++) {
+          ctx.beginPath();
+          ctx.moveTo(o.x - 15 + s * 15, o.y);
+          ctx.lineTo(o.x - 7 + s * 15, o.y - 40);
+          ctx.lineTo(o.x + s * 15, o.y);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+      } else if (o.type === 'barrier') {
+        // Orange barrier
+        ctx.fillStyle = '#ff6600';
+        ctx.shadowColor = '#ff6600';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(o.x - 20, o.y - 60, 40, 60);
+        ctx.fillStyle = '#ffff00';
+        // Warning stripes
+        for (var stripe = 0; stripe < 4; stripe++) {
+          ctx.fillRect(o.x - 15, o.y - 55 + stripe * 15, 30, 5);
+        }
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  // Draw power-ups
+  for (var i = 0; i < powerups.length; i++) {
+    var p = powerups[i];
+    if (!p.collected && p.x > cameraX - 100 && p.x < cameraX + w + 100) {
+      p.rotation += 0.05;
+      var bobY = Math.sin(time * 4 + p.x) * 8;
+
+      ctx.save();
+      ctx.translate(p.x, p.y + bobY);
+
+      // Glow effect
+      var glowColor = '#ffffff';
+      if (p.type === 'shield') glowColor = '#00aaff';
+      else if (p.type === 'magnet') glowColor = '#cc00ff';
+      else if (p.type === 'doubleCoins') glowColor = '#ffcc00';
+      else if (p.type === 'superJump') glowColor = '#00ff66';
+
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 20;
+
+      // Outer ring
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Inner circle
+      ctx.fillStyle = glowColor;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Icon
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (p.type === 'shield') ctx.fillText('🛡️', 0, 0);
+      else if (p.type === 'magnet') ctx.fillText('🧲', 0, 0);
+      else if (p.type === 'doubleCoins') ctx.fillText('2X', 0, 2);
+      else if (p.type === 'superJump') ctx.fillText('⬆️', 0, 0);
+
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+  }
+
   // Draw particles
   for (var i = 0; i < particles.length; i++) {
     var p = particles[i];
@@ -939,6 +1271,23 @@ function draw() {
   ctx.save();
   ctx.translate(car.x, car.y);
   ctx.rotate(car.rotation);
+
+  // Invincibility blink effect
+  if (invincibleTime > 0 && Math.floor(time * 10) % 2 === 0) {
+    ctx.globalAlpha = 0.5;
+  }
+
+  // Shield bubble effect
+  if (activeEffects.shield > 0) {
+    ctx.strokeStyle = '#00aaff';
+    ctx.shadowColor = '#00aaff';
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 55, 40, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
 
   // Car shadow
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -1083,6 +1432,7 @@ function draw() {
     ctx.shadowBlur = 0;
   }
 
+  ctx.globalAlpha = 1; // Reset after potential invincibility blink
   ctx.restore();
   ctx.restore();
 }
